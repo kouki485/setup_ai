@@ -19,6 +19,11 @@
 $ErrorActionPreference = "Continue"
 $script:Failed = @()
 
+# 実行ログをデスクトップに残す。社内で複数台に配る際、失敗した端末の状況を
+# 後から確認できるようにするため。exit で抜けてもプロセス終了時に自動で閉じる。
+$script:LogPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "ai-setup-log.txt"
+try { Start-Transcript -Path $script:LogPath -Force | Out-Null } catch { }
+
 function Write-Step($msg)  { Write-Host "`n==> $msg" -ForegroundColor Cyan }
 function Write-Ok($msg)    { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Skip($msg)  { Write-Host "  [SKIP] $msg" -ForegroundColor Yellow }
@@ -236,3 +241,8 @@ Write-Host "" -ForegroundColor Green
 Write-Host " WSL側にもCLIを入れる場合は、Ubuntuターミナルで" -ForegroundColor Green
 Write-Host "   bash wsl-setup.sh を実行してください。" -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Green
+Write-Host ""
+Write-Host " 実行ログ: $script:LogPath" -ForegroundColor DarkGray
+Write-Host " うまくいかない場合はこのファイルを管理者に送ってください。" -ForegroundColor DarkGray
+
+try { Stop-Transcript | Out-Null } catch { }

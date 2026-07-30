@@ -3,5 +3,7 @@
 #
 # setup.ps1  : UTF-8 BOM + CRLF（PowerShell 5.1 は BOM がないと CP932 として読む）
 # wsl-setup.sh: BOM なし + LF（bash は BOM を shebang の一部と誤認する）
+# install.bat  : ASCII + CRLF（バッチは CP932 として読まれるため日本語を入れない）
 *.ps1 -text
+*.bat -text
 *.sh  -text
