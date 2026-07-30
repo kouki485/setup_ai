@@ -67,7 +67,29 @@ $isAdmin = ([Security.Principal.WindowsPrincipal] `
 ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 # ============================================================
-# 1. WSL2
+# 1. PATH の確認・追加（%USERPROFILE%\.local\bin）
+#
+# インストールより前に登録する。Claude Code / Codex CLI はここへ入るが、
+# 途中で中断された場合に PATH だけ設定されないと、実体があるのに
+# コマンドが見つからない状態になる。ディレクトリが未作成でも登録は可能。
+# ============================================================
+Write-Step "PATH 設定を確認"
+
+$localBin = Join-Path $env:USERPROFILE ".local\bin"
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($userPath -notlike "*$localBin*") {
+    [Environment]::SetEnvironmentVariable("Path", "$userPath;$localBin", "User")
+    Write-Ok "PATH に $localBin を追加しました"
+} else {
+    Write-Skip "PATH は設定済み"
+}
+
+# このセッションの PATH も更新しておく（後段の検証を正しく行うため）
+$env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+            [Environment]::GetEnvironmentVariable("Path", "User")
+
+# ============================================================
+# 2. WSL2
 # ============================================================
 Write-Step "WSL2 の状態を確認"
 
@@ -137,7 +159,7 @@ if ($wslInstalled -and $distroInstalled) {
 }
 
 # ============================================================
-# 2. Git for Windows
+# 3. Git for Windows
 # ============================================================
 Write-Step "Git for Windows"
 
@@ -163,7 +185,7 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 }
 
 # ============================================================
-# 3. Claude Code（ネイティブ版・Node不要）
+# 4. Claude Code（ネイティブ版・Node不要）
 # ============================================================
 Write-Step "Claude Code"
 
@@ -174,7 +196,7 @@ if (Get-Command claude -ErrorAction SilentlyContinue) {
 }
 
 # ============================================================
-# 4. Codex CLI（ネイティブ版・Node不要）
+# 5. Codex CLI（ネイティブ版・Node不要）
 # ============================================================
 Write-Step "Codex CLI"
 
@@ -185,7 +207,7 @@ if (Get-Command codex -ErrorAction SilentlyContinue) {
 }
 
 # ============================================================
-# 5. Claude Desktop（GUIアプリ）
+# 6. Claude Desktop（GUIアプリ）
 # ============================================================
 Write-Step "Claude Desktop"
 
@@ -205,24 +227,6 @@ if (-not $hasWinget) {
     if ($LASTEXITCODE -eq 0) { Write-Ok "Claude Desktop をインストールしました（スタートメニューから起動できます）" }
     else { Write-Fail "Claude Desktop のインストールに失敗しました (exit=$LASTEXITCODE)"; $script:Failed += "Claude Desktop" }
 }
-
-# ============================================================
-# 6. PATH の確認・追加（%USERPROFILE%\.local\bin）
-# ============================================================
-Write-Step "PATH 設定を確認"
-
-$localBin = Join-Path $env:USERPROFILE ".local\bin"
-$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($userPath -notlike "*$localBin*") {
-    [Environment]::SetEnvironmentVariable("Path", "$userPath;$localBin", "User")
-    Write-Ok "PATH に $localBin を追加しました"
-} else {
-    Write-Skip "PATH は設定済み"
-}
-
-# 現セッションのPATHを最新化（インストール直後の検証を正しく行うため）
-$env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-            [Environment]::GetEnvironmentVariable("Path", "User")
 
 # ============================================================
 # 7. インストール確認

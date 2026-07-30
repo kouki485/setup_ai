@@ -159,65 +159,11 @@ else
 fi
 
 # ------------------------------------------------------------
-# 3. Git
-# ------------------------------------------------------------
-step "Git"
-
-# macOS には Command Line Tools 付属の git があるため、通常はここでスキップされる
-if command -v git >/dev/null 2>&1; then
-    skip "インストール済み ($(git --version))"
-else
-    if brew install git; then
-        ok "Git をインストールしました ($(git --version))"
-    else
-        fail "Git のインストールに失敗しました"
-        FAILED="$FAILED Git"
-    fi
-fi
-
-# ------------------------------------------------------------
-# 4. Claude Code
-# ------------------------------------------------------------
-step "Claude Code"
-
-if command -v claude >/dev/null 2>&1; then
-    skip "インストール済み ($(claude --version 2>/dev/null | head -n1))"
-else
-    run_installer "Claude Code" "https://claude.ai/install.sh" "bash" || true
-fi
-
-# ------------------------------------------------------------
-# 5. Codex CLI
-# ------------------------------------------------------------
-step "Codex CLI"
-
-if command -v codex >/dev/null 2>&1; then
-    skip "インストール済み ($(codex --version 2>/dev/null | head -n1))"
-else
-    run_installer "Codex CLI" "https://chatgpt.com/codex/install.sh" "sh" || true
-fi
-
-# ------------------------------------------------------------
-# 6. Claude Desktop (GUIアプリ)
-# ------------------------------------------------------------
-step "Claude Desktop"
-
-if [ -d "/Applications/Claude.app" ]; then
-    skip "インストール済み (/Applications/Claude.app)"
-elif brew list --cask claude >/dev/null 2>&1; then
-    skip "インストール済み (Homebrew Cask)"
-else
-    printf '  \033[90mClaude Desktop をダウンロードしています（数分かかります）...\033[0m\n'
-    if brew install --cask claude; then
-        ok "Claude Desktop をインストールしました（Launchpad から起動できます）"
-    else
-        fail "Claude Desktop のインストールに失敗しました"
-        FAILED="$FAILED Claude-Desktop"
-    fi
-fi
-
-# ------------------------------------------------------------
-# 7. PATH 確認（~/.local/bin）
+# 3. PATH 確認（~/.local/bin）
+#
+# CLI の導入より前に設定する。Claude Code / Codex CLI はここへ入るが、
+# 途中で中断された場合に PATH だけ未設定だと、実体があるのにコマンドが
+# 見つからない状態になる。ディレクトリが未作成でも追記は可能。
 # ------------------------------------------------------------
 step "PATH 設定を確認"
 
@@ -236,6 +182,64 @@ if ! echo "$PATH" | grep -q "$LOCAL_BIN"; then
     export PATH="$LOCAL_BIN:$PATH"
 else
     skip "PATH は設定済み"
+fi
+
+# ------------------------------------------------------------
+# 4. Git
+# ------------------------------------------------------------
+step "Git"
+
+# macOS には Command Line Tools 付属の git があるため、通常はここでスキップされる
+if command -v git >/dev/null 2>&1; then
+    skip "インストール済み ($(git --version))"
+else
+    if brew install git; then
+        ok "Git をインストールしました ($(git --version))"
+    else
+        fail "Git のインストールに失敗しました"
+        FAILED="$FAILED Git"
+    fi
+fi
+
+# ------------------------------------------------------------
+# 5. Claude Code
+# ------------------------------------------------------------
+step "Claude Code"
+
+if command -v claude >/dev/null 2>&1; then
+    skip "インストール済み ($(claude --version 2>/dev/null | head -n1))"
+else
+    run_installer "Claude Code" "https://claude.ai/install.sh" "bash" || true
+fi
+
+# ------------------------------------------------------------
+# 6. Codex CLI
+# ------------------------------------------------------------
+step "Codex CLI"
+
+if command -v codex >/dev/null 2>&1; then
+    skip "インストール済み ($(codex --version 2>/dev/null | head -n1))"
+else
+    run_installer "Codex CLI" "https://chatgpt.com/codex/install.sh" "sh" || true
+fi
+
+# ------------------------------------------------------------
+# 7. Claude Desktop (GUIアプリ)
+# ------------------------------------------------------------
+step "Claude Desktop"
+
+if [ -d "/Applications/Claude.app" ]; then
+    skip "インストール済み (/Applications/Claude.app)"
+elif brew list --cask claude >/dev/null 2>&1; then
+    skip "インストール済み (Homebrew Cask)"
+else
+    printf '  \033[90mClaude Desktop をダウンロードしています（数分かかります）...\033[0m\n'
+    if brew install --cask claude; then
+        ok "Claude Desktop をインストールしました（Launchpad から起動できます）"
+    else
+        fail "Claude Desktop のインストールに失敗しました"
+        FAILED="$FAILED Claude-Desktop"
+    fi
 fi
 
 # ------------------------------------------------------------
