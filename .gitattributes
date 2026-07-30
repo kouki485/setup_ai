@@ -1,0 +1,5 @@
+# PowerShell は BOM のない UTF-8 を CP932 として読むため、BOM と CRLF を保持する
+*.ps1 text eol=crlf working-tree-encoding=UTF-8
+
+# bash は BOM を shebang の一部と誤認するため、BOM を付けず LF を保持する
+*.sh text eol=lf
