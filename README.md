@@ -1,6 +1,6 @@
-# Windows 用 AI 開発環境 セットアップスクリプト
+# AI 開発環境 セットアップスクリプト（Windows / Mac）
 
-新品の Windows パソコンに、AI でコードを書くための道具を**まとめて自動インストール**するスクリプトです。
+新品の Windows または Mac に、AI でコードを書くための道具を**まとめて自動インストール**するスクリプトです。
 
 ひとつずつ手作業で入れると 30 分以上かかる作業が、コマンド 2 行で終わります。
 
@@ -219,6 +219,70 @@ Microsoft Store で「**アプリ インストーラー**」を検索して、�
 
 ---
 
+## 使い方（Mac の場合）
+
+Mac では **`mac-setup.sh`** を使います。`install.bat` や `setup.ps1` は Windows 専用なので使えません。
+
+ターミナル（アプリケーション → ユーティリティ → ターミナル）を開いて、次の 2 行を実行します。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_windwos/main/mac-setup.sh -o mac-setup.sh
+bash mac-setup.sh
+```
+
+入るものは次の 6 つです。
+
+| 入るもの | 説明 |
+|---|---|
+| **Xcode Command Line Tools** | Homebrew を動かすための前提。Apple 純正の開発ツール |
+| **Homebrew** | Mac 用のソフト管理ツール。以降のインストールに使います |
+| **Git** | 変更履歴の管理ツール（Command Line Tools に含まれるため通常はスキップされます） |
+| **Claude Code** | ターミナルで動く AI コーディング支援ツール |
+| **Codex CLI** | 同上（OpenAI 製） |
+| **Claude Desktop** | Claude のデスクトップアプリ |
+
+### Mac 特有の注意点
+
+**パスワードを 1 回聞かれます**
+
+Homebrew の導入時だけ、Mac のログインパスワードを求められます。入力しても**画面には何も表示されません**が、ちゃんと入力されています。そのまま Enter を押してください。
+
+Homebrew が既に入っている場合、パスワードは聞かれません。
+
+**Xcode Command Line Tools のダイアログが出ます**
+
+初回のみ「ソフトウェアをインストールしますか？」というダイアログが表示されます。「**インストール**」を選んでください。数分かかります。スクリプトは完了を自動で待ちます。
+
+**Apple Silicon と Intel でインストール先が変わります**
+
+スクリプトが自動で判定します。
+
+- Apple Silicon（M1〜M4）: `/opt/homebrew`
+- Intel: `/usr/local`
+
+Apple Silicon の Mac では Homebrew のコマンドが初期状態で認識されないため、`~/.zprofile` に設定を自動で追記します。
+
+**終わったら新しいターミナルを開いてください**
+
+設定の反映のためです。今の画面でそのまま試したい場合は次を実行します。
+
+```bash
+source ~/.zprofile
+```
+
+### ログイン
+
+```bash
+claude      # ブラウザが開くので Claude アカウントでログイン
+codex       # ブラウザが開くので ChatGPT アカウントでログイン
+```
+
+Claude Desktop は Launchpad から起動してサインインします。
+
+実行ログは**デスクトップの `ai-setup-log.txt`** に残ります。
+
+---
+
 ## インストール後: 自分の業務を AI に手伝わせる
 
 ツールを入れただけでは仕事は楽になりません。**Claude にあなたの業務を理解させる**ところから始めてください。そのためのプロンプトを `prompts/` に用意しています。
@@ -319,6 +383,7 @@ set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_windwos/4f3cc03/s
 | `install.bat` | **配布用の起動ファイル。** 管理者昇格・ダウンロード・検証・実行を自動化 |
 | `setup.ps1` | Windows 側のセットアップ本体（PowerShell スクリプト） |
 | `wsl-setup.sh` | WSL / Ubuntu 側のセットアップ（シェルスクリプト） |
+| `mac-setup.sh` | **macOS 用のセットアップ。** Homebrew の導入から一括で行う |
 | `prompts/business-discovery.md` | **業務ヒアリング用プロンプト。** Claude が業務を深掘りして業務プロファイルを作る |
 | `prompts/ax-proposal.md` | **AX 提案用プロンプト。** 業務プロファイルから AI 活用案を優先順位付きで出す |
 | `.gitattributes` | 文字コードと改行の設定を保護するための設定ファイル |
