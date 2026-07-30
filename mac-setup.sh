@@ -34,10 +34,16 @@ exec > >(tee "$LOG") 2>&1
 # 一時的な 503 等に備えたリトライ付きダウンロード実行
 # 使い方: run_installer "名前" "URL" "bash|sh"
 run_installer() {
-    local name="$1" url="$2" shell="$3" attempt
+    local name="$1" url="$2" shell="$3" attempt start elapsed
     for attempt in 1 2 3; do
+        printf '  \033[90mインストーラを取得して実行します。\033[0m\n'
+        printf '  \033[90mダウンロードと展開に 1〜3 分かかります。画面が止まって見えても正常です。\033[0m\n'
+        start=$(date +%s)
+        # 出力は捨てずにそのまま流す。無言にすると利用者が固まったと誤解して
+        # 強制終了してしまうため。
         if curl -fsSL "$url" | "$shell"; then
-            ok "$name をインストールしました"
+            elapsed=$(( $(date +%s) - start ))
+            ok "$name をインストールしました (${elapsed}秒)"
             return 0
         fi
         fail "$name のダウンロードに失敗 (試行 $attempt/3)。5秒後に再試行..."
@@ -201,6 +207,7 @@ if [ -d "/Applications/Claude.app" ]; then
 elif brew list --cask claude >/dev/null 2>&1; then
     skip "インストール済み (Homebrew Cask)"
 else
+    printf '  \033[90mClaude Desktop をダウンロードしています（数分かかります）...\033[0m\n'
     if brew install --cask claude; then
         ok "Claude Desktop をインストールしました（Launchpad から起動できます）"
     else

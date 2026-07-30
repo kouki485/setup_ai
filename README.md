@@ -291,10 +291,12 @@ Claude Desktop は Launchpad から起動してサインインします。
 
 | ステップ | プロンプト | やること | 所要時間 |
 |---|---|---|---|
-| 1 | [`prompts/business-discovery.md`](prompts/business-discovery.md) | Claude があなたの業務を**ヒアリングして深掘り**し、`業務プロファイル.md` を作る | 30〜40分 |
+| 1 | [`prompts/business-discovery.md`](prompts/business-discovery.md) | Claude があなたの業務を**ヒアリングして深掘り**し、`業務プロファイル.md` と `業務プロファイル.html` を作る | 30〜40分 |
 | 2 | [`prompts/ax-proposal.md`](prompts/ax-proposal.md) | その内容を元に、**AI で楽にできる部分**を洗い出して優先順位を付ける | 20〜30分 |
 
 ステップ 1 では Claude が質問してくるので、答えていくだけです。**AI に何ができるか知らなくても構いません。** 普段の仕事をそのまま話してください。
+
+成果物は **HTML と Markdown の 2 形式**で作られます。`業務プロファイル.html` はダブルクリックでブラウザで開けるので、上司や同僚への共有、印刷、PDF 化に使えます。外部のファイルを参照しない単一ファイルなので、オフラインでもメール添付でも崩れません。`業務プロファイル.md` は次の工程で Claude が読むためのものです。
 
 ### 使い方（かんたん）
 

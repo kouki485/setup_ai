@@ -30,21 +30,35 @@ function Write-Skip($msg)  { Write-Host "  [SKIP] $msg" -ForegroundColor Yellow 
 function Write-Fail($msg)  { Write-Host "  [NG] $msg" -ForegroundColor Red; }
 
 # 一時的な503等に備えたリトライ付きインストーラー実行
+#
+# 値を返さないのは意図的。呼び出し側で `| Out-Null` すると戻り値だけでなく
+# インストーラ本体の出力まで捨てられ、進捗が何も見えなくなるため。
+# 失敗は $script:Failed に記録して呼び出し側に伝える。
 function Invoke-Installer($name, $url) {
     for ($i = 1; $i -le 3; $i++) {
         try {
-            $script = Invoke-RestMethod -Uri $url -TimeoutSec 120
-            Invoke-Expression $script
-            Write-Ok "$name をインストールしました"
-            return $true
+            Write-Host "  インストーラを取得しています..." -ForegroundColor DarkGray
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            $installScript = Invoke-RestMethod -Uri $url -TimeoutSec 120
+            Write-Host "  取得完了 ($([int]$sw.Elapsed.TotalSeconds)秒)。インストールを実行します。" -ForegroundColor DarkGray
+            Write-Host "  ダウンロードと展開に 1〜3 分かかります。画面が止まって見えても正常です。" -ForegroundColor DarkGray
+
+            # 出力をそのまま流す。ここを Out-Null すると無言になり、
+            # 利用者が固まったと誤解して強制終了してしまう。
+            Invoke-Expression $installScript
+
+            Write-Ok "$name をインストールしました ($([int]$sw.Elapsed.TotalSeconds)秒)"
+            return
         } catch {
             Write-Fail "$name のダウンロード/実行に失敗 (試行 $i/3): $($_.Exception.Message)"
-            if ($i -lt 3) { Start-Sleep -Seconds 5 }
+            if ($i -lt 3) {
+                Write-Host "  5秒後に再試行します..." -ForegroundColor DarkGray
+                Start-Sleep -Seconds 5
+            }
         }
     }
     Write-Fail "$name のインストールに失敗しました。後で手動実行してください: irm $url | iex"
     $script:Failed += $name
-    return $false
 }
 
 # ---- 管理者チェック（WSLインストールに必要） ----
@@ -79,6 +93,7 @@ if ($wslInstalled) {
 
 if ($wslInstalled -and $distroInstalled) {
     Write-Ok "WSL2 はインストール済み"
+    Write-Host "  WSLカーネルの更新を確認しています（数分かかることがあります）..." -ForegroundColor DarkGray
     try { & wsl.exe --update 2>$null | Out-Null; Write-Ok "WSLカーネルを最新化" } catch { }
 } elseif ($wslInstalled) {
     # WSL 本体は有効。ディストリビューションを足すだけなので再起動は不要。
@@ -140,6 +155,7 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     Write-Skip "Git は winget が無いためスキップしました"
     $script:Failed += "Git (winget なし)"
 } else {
+    Write-Host "  Git をダウンロードしています（約60MB、数分かかります）..." -ForegroundColor DarkGray
     winget install --id Git.Git -e --source winget `
         --accept-package-agreements --accept-source-agreements
     if ($LASTEXITCODE -eq 0) { Write-Ok "Git for Windows をインストールしました" }
@@ -154,7 +170,7 @@ Write-Step "Claude Code"
 if (Get-Command claude -ErrorAction SilentlyContinue) {
     Write-Skip "Claude Code はインストール済み"
 } else {
-    Invoke-Installer "Claude Code" "https://claude.ai/install.ps1" | Out-Null
+    Invoke-Installer "Claude Code" "https://claude.ai/install.ps1"
 }
 
 # ============================================================
@@ -165,7 +181,7 @@ Write-Step "Codex CLI"
 if (Get-Command codex -ErrorAction SilentlyContinue) {
     Write-Skip "Codex CLI はインストール済み"
 } else {
-    Invoke-Installer "Codex CLI" "https://chatgpt.com/codex/install.ps1" | Out-Null
+    Invoke-Installer "Codex CLI" "https://chatgpt.com/codex/install.ps1"
 }
 
 # ============================================================
@@ -183,6 +199,7 @@ if (-not $hasWinget) {
 } elseif ($desktopInstalled) {
     Write-Skip "Claude Desktop はインストール済み"
 } else {
+    Write-Host "  Claude Desktop をダウンロードしています（数分かかります）..." -ForegroundColor DarkGray
     winget install --id Anthropic.Claude -e --source winget `
         --accept-package-agreements --accept-source-agreements --silent
     if ($LASTEXITCODE -eq 0) { Write-Ok "Claude Desktop をインストールしました（スタートメニューから起動できます）" }
