@@ -1,5 +1,7 @@
-# PowerShell は BOM のない UTF-8 を CP932 として読むため、BOM と CRLF を保持する
-*.ps1 text eol=crlf working-tree-encoding=UTF-8
-
-# bash は BOM を shebang の一部と誤認するため、BOM を付けず LF を保持する
-*.sh text eol=lf
+# raw URL から直接ダウンロードして実行するため、git にテキスト変換をさせない。
+# リポジトリ内のバイト列がそのまま配信される必要がある。
+#
+# setup.ps1  : UTF-8 BOM + CRLF（PowerShell 5.1 は BOM がないと CP932 として読む）
+# wsl-setup.sh: BOM なし + LF（bash は BOM を shebang の一部と誤認する）
+*.ps1 -text
+*.sh  -text
