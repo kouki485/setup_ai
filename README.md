@@ -219,6 +219,61 @@ Microsoft Store で「**アプリ インストーラー**」を検索して、�
 
 ---
 
+## インストール後: 自分の業務を AI に手伝わせる
+
+ツールを入れただけでは仕事は楽になりません。**Claude にあなたの業務を理解させる**ところから始めてください。そのためのプロンプトを `prompts/` に用意しています。
+
+### 使う順番
+
+| ステップ | プロンプト | やること | 所要時間 |
+|---|---|---|---|
+| 1 | [`prompts/business-discovery.md`](prompts/business-discovery.md) | Claude があなたの業務を**ヒアリングして深掘り**し、`業務プロファイル.md` を作る | 30〜40分 |
+| 2 | [`prompts/ax-proposal.md`](prompts/ax-proposal.md) | その内容を元に、**AI で楽にできる部分**を洗い出して優先順位を付ける | 20〜30分 |
+
+ステップ 1 では Claude が質問してくるので、答えていくだけです。**AI に何ができるか知らなくても構いません。** 普段の仕事をそのまま話してください。
+
+### 使い方（かんたん）
+
+1. ターミナルで `claude` を起動
+2. プロンプトファイルの中身をコピーして貼り付ける
+3. Claude が質問を始めるので、答えていく
+
+```powershell
+# プロンプトをダウンロードしておくと楽です
+curl.exe -fsSL -o "%USERPROFILE%\Desktop\業務ヒアリング.md" https://raw.githubusercontent.com/kouki485/setup_windwos/main/prompts/business-discovery.md
+```
+
+### 使い方（スラッシュコマンドとして登録）
+
+`~/.claude/commands/` に置くと、`/business-discovery` と打つだけで呼び出せます。
+
+```powershell
+mkdir "$env:USERPROFILE\.claude\commands" -Force
+curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\business-discovery.md" https://raw.githubusercontent.com/kouki485/setup_windwos/main/prompts/business-discovery.md
+curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\ax-proposal.md" https://raw.githubusercontent.com/kouki485/setup_windwos/main/prompts/ax-proposal.md
+```
+
+登録後、`claude` を起動して `/business-discovery` と入力すれば始まります。
+
+### なぜ 2 段階に分けているのか
+
+業務を聞きながら同時に AI 活用を提案させると、**提案の質が落ちます**。「AI にできそうなこと」に話が寄ってしまい、本当に時間を食っている作業が埋もれるためです。
+
+そのためステップ 1 のプロンプトは、AI の話を意図的に禁止しています。まず業務を正確に理解し、それから提案する順序にしてください。
+
+### 期待してよいこと・できないこと
+
+| できること | できないこと |
+|---|---|
+| 文章の下書き、要約、分類、書き換え | 社内の最新情報や固有の事実を知ること（渡す必要あり） |
+| 判断基準が言語化できる作業の支援 | 数値の計算・集計の精度保証（必ず検証が必要） |
+| 過去の書き方に合わせた文章生成 | 責任を伴う最終判断 |
+| 暗黙知の言語化・マニュアル化 | 社外に出せない情報の処理（扱い方の設計が必要） |
+
+ステップ 2 のプロンプトは、**AI に任せるべきでない業務を「対象外」として明示する**よう指示しています。できないことを正直に出す方が、長く使える提案になります。
+
+---
+
 ## 管理者・IT 担当者向け（複数台へ配布する場合）
 
 社内の複数の PC に同じ環境を作る場合の推奨手順です。
@@ -264,6 +319,8 @@ set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_windwos/4f3cc03/s
 | `install.bat` | **配布用の起動ファイル。** 管理者昇格・ダウンロード・検証・実行を自動化 |
 | `setup.ps1` | Windows 側のセットアップ本体（PowerShell スクリプト） |
 | `wsl-setup.sh` | WSL / Ubuntu 側のセットアップ（シェルスクリプト） |
+| `prompts/business-discovery.md` | **業務ヒアリング用プロンプト。** Claude が業務を深掘りして業務プロファイルを作る |
+| `prompts/ax-proposal.md` | **AX 提案用プロンプト。** 業務プロファイルから AI 活用案を優先順位付きで出す |
 | `.gitattributes` | 文字コードと改行の設定を保護するための設定ファイル |
 
 <details>
