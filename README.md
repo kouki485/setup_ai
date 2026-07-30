@@ -47,7 +47,7 @@ Git と Claude Desktop のインストールに `winget` というコマンド�
 
 **`install.bat` をダウンロードしてダブルクリックするだけ**です。コマンドを打つ必要はありません。
 
-1. [install.bat をダウンロード](https://raw.githubusercontent.com/kouki485/setup_windwos/main/windows/install.bat)（リンクを右クリック →「名前を付けてリンク先を保存」）
+1. [install.bat をダウンロード](https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/install.bat)（リンクを右クリック →「名前を付けてリンク先を保存」）
 2. ダウンロードした `install.bat` を**ダブルクリック**
 3. 「このアプリがデバイスに変更を加えることを許可しますか？」→「**はい**」
 
@@ -78,7 +78,7 @@ Git と Claude Desktop のインストールに `winget` というコマンド�
 ### 手順 2. 次の 2 行を貼り付けて実行
 
 ```powershell
-curl.exe -fsSL -o "$env:TEMP\setup.ps1" https://raw.githubusercontent.com/kouki485/setup_windwos/main/windows/setup.ps1
+curl.exe -fsSL -o "$env:TEMP\setup.ps1" https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/setup.ps1
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup.ps1"
 ```
 
@@ -138,7 +138,7 @@ WSL の中でも AI ツールを使いたい場合に実行します。Windows �
 **Ubuntu のターミナル**を開いて、次の 2 行を実行します。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_windwos/main/windows/wsl-setup.sh -o wsl-setup.sh
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/wsl-setup.sh -o wsl-setup.sh
 bash wsl-setup.sh
 ```
 
@@ -226,7 +226,7 @@ Mac では **`mac-setup.sh`** を使います。`install.bat` や `setup.ps1` �
 ターミナル（アプリケーション → ユーティリティ → ターミナル）を開いて、次の 2 行を実行します。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_windwos/main/mac/mac-setup.sh -o mac-setup.sh
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/main/mac/mac-setup.sh -o mac-setup.sh
 bash mac-setup.sh
 ```
 
@@ -306,16 +306,16 @@ Claude Desktop は Launchpad から起動してサインインします。
 
 ```powershell
 mkdir "$env:USERPROFILE\.claude\commands" -Force
-curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\business-discovery.md" https://raw.githubusercontent.com/kouki485/setup_windwos/main/prompts/business-discovery.md
-curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\ax-proposal.md" https://raw.githubusercontent.com/kouki485/setup_windwos/main/prompts/ax-proposal.md
+curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\business-discovery.md" https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/business-discovery.md
+curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\ax-proposal.md" https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/ax-proposal.md
 ```
 
 **Mac**（ターミナル）
 
 ```bash
 mkdir -p ~/.claude/commands
-curl -fsSL -o ~/.claude/commands/business-discovery.md https://raw.githubusercontent.com/kouki485/setup_windwos/main/prompts/business-discovery.md
-curl -fsSL -o ~/.claude/commands/ax-proposal.md https://raw.githubusercontent.com/kouki485/setup_windwos/main/prompts/ax-proposal.md
+curl -fsSL -o ~/.claude/commands/business-discovery.md https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/business-discovery.md
+curl -fsSL -o ~/.claude/commands/ax-proposal.md https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/ax-proposal.md
 ```
 
 ---
@@ -335,7 +335,7 @@ $base = "$env:USERPROFILE\Desktop\業務改善"; $dir = $base; $i = 2
 while (Test-Path $dir) { $dir = "$base$i"; $i++ }
 New-Item -ItemType Directory -Path $dir | Out-Null
 Set-Location $dir
-git clone https://github.com/kouki485/setup_windwos.git
+git clone https://github.com/kouki485/setup_ai.git
 Write-Host "作業フォルダ: $dir"
 ```
 
@@ -345,7 +345,7 @@ Write-Host "作業フォルダ: $dir"
 base="$HOME/Desktop/業務改善"; dir="$base"; i=2
 while [ -e "$dir" ]; do dir="$base$i"; i=$((i+1)); done
 mkdir -p "$dir" && cd "$dir"
-git clone https://github.com/kouki485/setup_windwos.git
+git clone https://github.com/kouki485/setup_ai.git
 echo "作業フォルダ: $dir"
 ```
 
@@ -353,7 +353,7 @@ echo "作業フォルダ: $dir"
 
 ```
 Desktop/業務改善/          ← ここが作業フォルダ（今ここにいます）
-  └── setup_windwos/       ← clone されたリポジトリ
+  └── setup_ai/       ← clone されたリポジトリ
         ├── prompts/       ← プロンプト一式
         └── README.md
 ```
@@ -408,7 +408,7 @@ Claude が起動したら、こう入力します。
 
 ```
 Desktop/業務改善/
-  ├── setup_windwos/          ← ステップ1で clone したリポジトリ
+  ├── setup_ai/          ← ステップ1で clone したリポジトリ
   ├── 業務プロファイル.html   ← ダブルクリックで開く。共有・印刷用
   └── 業務プロファイル.md     ← 次の工程で Claude が読む
 ```
@@ -543,7 +543,7 @@ Claude を起動して、プロンプトをコピーして貼り、`【ここに
 
 ```bat
 rem 例: 特定バージョンに固定する
-set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_windwos/4f3cc03/windows/setup.ps1"
+set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_ai/e410eff/windows/setup.ps1"
 ```
 
 ### GitHub にアクセスできない環境の場合
