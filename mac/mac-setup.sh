@@ -18,7 +18,7 @@
 # 何度実行しても安全です（導入済みはスキップされます）。
 # ============================================================
 
-set -u
+set -uo pipefail
 
 step() { printf '\n\033[36m==> %s\033[0m\n' "$1"; }
 ok()   { printf '  \033[32m[OK]\033[0m %s\n' "$1"; }
@@ -220,7 +220,9 @@ step "Codex CLI"
 if command -v codex >/dev/null 2>&1; then
     skip "インストール済み ($(codex --version 2>/dev/null | head -n1))"
 else
-    run_installer "Codex CLI" "https://chatgpt.com/codex/install.sh" "sh" || true
+    # セットアップ途中で Codex 本体を起動しない。起動すると終了コードが
+    # インストーラへ伝播し、導入済みでも失敗としてリトライされるため。
+    CODEX_NON_INTERACTIVE=1 run_installer "Codex CLI" "https://chatgpt.com/codex/install.sh" "sh" || true
 fi
 
 # ------------------------------------------------------------
