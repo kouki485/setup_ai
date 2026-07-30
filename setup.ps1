@@ -52,15 +52,50 @@ $isAdmin = ([Security.Principal.WindowsPrincipal] `
 # ============================================================
 Write-Step "WSL2 の状態を確認"
 
+# WSL は「機能が有効か」と「ディストリビューションが入っているか」を別に確認する。
+# `wsl --status` は機能が有効なだけで exit 0 を返すため、これだけで判定すると
+# Ubuntu が未導入なのに「インストール済み」と誤判定してしまう。
 $wslInstalled = $false
+$distroInstalled = $false
+$distroList = ""
+
 try {
     $null = & wsl.exe --status 2>$null
     if ($LASTEXITCODE -eq 0) { $wslInstalled = $true }
 } catch { }
 
 if ($wslInstalled) {
+    try {
+        # --list --quiet の出力は UTF-16LE のため NUL を除いてから中身を判定する
+        $distroList = (& wsl.exe --list --quiet 2>$null | Out-String).Replace("`0", "").Trim()
+        if ($LASTEXITCODE -eq 0 -and $distroList) { $distroInstalled = $true }
+    } catch { }
+}
+
+if ($wslInstalled -and $distroInstalled) {
     Write-Ok "WSL2 はインストール済み"
     try { & wsl.exe --update 2>$null | Out-Null; Write-Ok "WSLカーネルを最新化" } catch { }
+} elseif ($wslInstalled) {
+    # WSL 本体は有効。ディストリビューションを足すだけなので再起動は不要。
+    if (-not $isAdmin) {
+        Write-Fail "Ubuntu のインストールには管理者権限が必要です。"
+        Write-Host "  PowerShellを「管理者として実行」で開き直して再実行してください。"
+        exit 1
+    }
+    Write-Host "  WSL2 は有効ですが Ubuntu が入っていません。Ubuntu を追加します..."
+    # --no-launch は初回起動の対話設定を挟まずに導入する（未対応の WSL では無しで再試行）
+    & wsl.exe --install -d Ubuntu --no-launch
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  --no-launch が使えないため通常の方法で再試行します..."
+        & wsl.exe --install -d Ubuntu
+    }
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "Ubuntu をインストールしました"
+        Write-Host "  ※ 初回だけスタートメニューから Ubuntu を開き、ユーザー名とパスワードの設定が必要です" -ForegroundColor Yellow
+    } else {
+        Write-Fail "Ubuntu のインストールに失敗しました (exit=$LASTEXITCODE)"
+        $script:Failed += "Ubuntu"
+    }
 } else {
     if (-not $isAdmin) {
         Write-Fail "WSL2のインストールには管理者権限が必要です。"
@@ -86,13 +121,20 @@ if ($wslInstalled) {
 # ============================================================
 Write-Step "Git for Windows"
 
+# winget の有無を先に判定する。無い場合でも Claude Code / Codex CLI は
+# インストーラを直接ダウンロードするため導入できる。ここで中断してはいけない。
+$hasWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
+if (-not $hasWinget) {
+    Write-Fail "winget が見つかりません。Git と Claude Desktop はスキップして続行します。"
+    Write-Host "  Microsoft Store で「アプリ インストーラー」を入れると次回から導入できます。" -ForegroundColor Yellow
+}
+
 if (Get-Command git -ErrorAction SilentlyContinue) {
     Write-Skip "Git はインストール済み ($(git --version))"
+} elseif (-not $hasWinget) {
+    Write-Skip "Git は winget が無いためスキップしました"
+    $script:Failed += "Git (winget なし)"
 } else {
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        Write-Fail "winget が見つかりません。Microsoft Storeで「アプリ インストーラー」を更新してください。"
-        exit 1
-    }
     winget install --id Git.Git -e --source winget `
         --accept-package-agreements --accept-source-agreements
     if ($LASTEXITCODE -eq 0) { Write-Ok "Git for Windows をインストールしました" }
@@ -126,8 +168,14 @@ if (Get-Command codex -ErrorAction SilentlyContinue) {
 # ============================================================
 Write-Step "Claude Desktop"
 
-$desktopInstalled = winget list --id Anthropic.Claude -e 2>$null | Select-String "Anthropic.Claude"
-if ($desktopInstalled) {
+$desktopInstalled = $null
+if ($hasWinget) {
+    $desktopInstalled = winget list --id Anthropic.Claude -e 2>$null | Select-String "Anthropic.Claude"
+}
+if (-not $hasWinget) {
+    Write-Skip "Claude Desktop は winget が無いためスキップしました"
+    $script:Failed += "Claude Desktop (winget なし)"
+} elseif ($desktopInstalled) {
     Write-Skip "Claude Desktop はインストール済み"
 } else {
     winget install --id Anthropic.Claude -e --source winget `
@@ -166,6 +214,7 @@ foreach ($cmd in @("git", "claude", "codex")) {
         Write-Ok "$cmd : $v"
     } else {
         Write-Fail "$cmd が見つかりません（ターミナル再起動後に再確認してください）"
+        if ($cmd -eq "git" -and -not $hasWinget) { Write-Host "        → winget が無いため未導入です" -ForegroundColor DarkGray }
     }
 }
 
@@ -178,6 +227,8 @@ Write-Host ""
 Write-Host "============================================================" -ForegroundColor Green
 Write-Host " セットアップ完了！次のステップ:" -ForegroundColor Green
 Write-Host "   1. 新しいターミナルを開く（PATH反映のため）" -ForegroundColor Green
+Write-Host "      ※ 今の画面でそのまま試すなら、次の1行を貼り付けてください:" -ForegroundColor DarkGray
+Write-Host '        $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")' -ForegroundColor DarkGray
 Write-Host "   2. claude を実行 → ブラウザでログイン（Pro/Max等が必要）" -ForegroundColor Green
 Write-Host "   3. codex  を実行 → ブラウザでログイン（ChatGPT Plus等が必要）" -ForegroundColor Green
 Write-Host "   4. スタートメニューから Claude を起動 → アカウントでサインイン" -ForegroundColor Green
