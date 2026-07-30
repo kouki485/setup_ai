@@ -256,7 +256,7 @@ Write-Host "   3. codex  を実行 → ブラウザでログイン（ChatGPT Plu
 Write-Host "   4. スタートメニューから Claude を起動 → アカウントでサインイン" -ForegroundColor Green
 Write-Host "" -ForegroundColor Green
 Write-Host " WSL側にもCLIを入れる場合は、Ubuntuターミナルで" -ForegroundColor Green
-Write-Host "   bash wsl-setup.sh を実行してください。" -ForegroundColor Green
+Write-Host "   bash wsl-setup.sh を実行してください（windows フォルダ内にあります）。" -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host " 実行ログ: $script:LogPath" -ForegroundColor DarkGray

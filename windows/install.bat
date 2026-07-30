@@ -15,7 +15,7 @@ rem ============================================================
 
 setlocal enabledelayedexpansion
 
-set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_windwos/main/setup.ps1"
+set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_windwos/main/windows/setup.ps1"
 set "DEST=%TEMP%\setup.ps1"
 
 echo ============================================================

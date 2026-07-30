@@ -61,7 +61,7 @@ step "実行環境の確認"
 
 if [ "$(uname -s)" != "Darwin" ]; then
     fail "このスクリプトは macOS 専用です（現在: $(uname -s)）"
-    echo "  Windows の場合は setup.ps1、WSL の場合は wsl-setup.sh を使ってください。"
+    echo "  Windows の場合は windows/setup.ps1、WSL の場合は windows/wsl-setup.sh を使ってください。"
     exit 1
 fi
 

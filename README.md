@@ -47,7 +47,7 @@ Git と Claude Desktop のインストールに `winget` というコマンド�
 
 **`install.bat` をダウンロードしてダブルクリックするだけ**です。コマンドを打つ必要はありません。
 
-1. [install.bat をダウンロード](https://raw.githubusercontent.com/kouki485/setup_windwos/main/install.bat)（リンクを右クリック →「名前を付けてリンク先を保存」）
+1. [install.bat をダウンロード](https://raw.githubusercontent.com/kouki485/setup_windwos/main/windows/install.bat)（リンクを右クリック →「名前を付けてリンク先を保存」）
 2. ダウンロードした `install.bat` を**ダブルクリック**
 3. 「このアプリがデバイスに変更を加えることを許可しますか？」→「**はい**」
 
@@ -78,7 +78,7 @@ Git と Claude Desktop のインストールに `winget` というコマンド�
 ### 手順 2. 次の 2 行を貼り付けて実行
 
 ```powershell
-curl.exe -fsSL -o "$env:TEMP\setup.ps1" https://raw.githubusercontent.com/kouki485/setup_windwos/main/setup.ps1
+curl.exe -fsSL -o "$env:TEMP\setup.ps1" https://raw.githubusercontent.com/kouki485/setup_windwos/main/windows/setup.ps1
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup.ps1"
 ```
 
@@ -138,7 +138,7 @@ WSL の中でも AI ツールを使いたい場合に実行します。Windows �
 **Ubuntu のターミナル**を開いて、次の 2 行を実行します。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_windwos/main/wsl-setup.sh -o wsl-setup.sh
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_windwos/main/windows/wsl-setup.sh -o wsl-setup.sh
 bash wsl-setup.sh
 ```
 
@@ -226,7 +226,7 @@ Mac では **`mac-setup.sh`** を使います。`install.bat` や `setup.ps1` �
 ターミナル（アプリケーション → ユーティリティ → ターミナル）を開いて、次の 2 行を実行します。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_windwos/main/mac-setup.sh -o mac-setup.sh
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_windwos/main/mac/mac-setup.sh -o mac-setup.sh
 bash mac-setup.sh
 ```
 
@@ -543,7 +543,7 @@ Claude を起動して、プロンプトをコピーして貼り、`【ここに
 
 ```bat
 rem 例: 特定バージョンに固定する
-set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_windwos/4f3cc03/setup.ps1"
+set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_windwos/4f3cc03/windows/setup.ps1"
 ```
 
 ### GitHub にアクセスできない環境の場合
@@ -554,15 +554,36 @@ set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_windwos/4f3cc03/s
 
 ## ファイル構成
 
+OS ごとにディレクトリを分けています。自分の OS のフォルダだけ見れば足ります。
+
+```
+windows/          Windows 用
+  install.bat       配布用の起動ファイル（ダブルクリックで実行）
+  setup.ps1         セットアップ本体
+  wsl-setup.sh      WSL / Ubuntu 内のセットアップ
+
+mac/              Mac 用
+  mac-setup.sh      セットアップ本体（Homebrew の導入を含む）
+
+prompts/          OS 共通。業務改善用のプロンプト
+  business-discovery.md   業務ヒアリング（深掘り）
+  ax-proposal.md          AX 提案（AI 活用の設計）
+
+README.md         このファイル
+.gitattributes    文字コードと改行を保護する設定
+```
+
 | ファイル | 役割 |
 |---|---|
-| `install.bat` | **配布用の起動ファイル。** 管理者昇格・ダウンロード・検証・実行を自動化 |
-| `setup.ps1` | Windows 側のセットアップ本体（PowerShell スクリプト） |
-| `wsl-setup.sh` | WSL / Ubuntu 側のセットアップ（シェルスクリプト） |
-| `mac-setup.sh` | **macOS 用のセットアップ。** Homebrew の導入から一括で行う |
+| `windows/install.bat` | **Windows 配布用の起動ファイル。** 管理者昇格・ダウンロード・検証・実行を自動化 |
+| `windows/setup.ps1` | Windows 側のセットアップ本体（PowerShell スクリプト） |
+| `windows/wsl-setup.sh` | WSL / Ubuntu 側のセットアップ（シェルスクリプト） |
+| `mac/mac-setup.sh` | **macOS 用のセットアップ。** Homebrew の導入から一括で行う |
 | `prompts/business-discovery.md` | **業務ヒアリング用プロンプト。** Claude が業務を深掘りして業務プロファイルを作る |
 | `prompts/ax-proposal.md` | **AX 提案用プロンプト。** 業務プロファイルから AI 活用案を優先順位付きで出す |
 | `.gitattributes` | 文字コードと改行の設定を保護するための設定ファイル |
+
+`.gitattributes` は拡張子で判定しているため、ディレクトリを分けても設定はそのまま効きます（`*.ps1` は BOM + CRLF、`*.sh` は BOM なし + LF、`*.bat` は ASCII + CRLF を保持）。
 
 <details>
 <summary>.gitattributes は何をしているの？（技術的な補足）</summary>
