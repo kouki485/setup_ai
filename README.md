@@ -322,25 +322,47 @@ curl -fsSL -o ~/.claude/commands/ax-proposal.md https://raw.githubusercontent.co
 
 ### 実際の使い方（ステップバイステップ）
 
-#### ステップ 1. 成果物を置くフォルダを作って移動する
+#### ステップ 1. 作業フォルダを作って移動する
 
-Claude はここにファイルを作ります。デスクトップに専用フォルダを用意すると分かりやすいです。
+デスクトップに **「業務改善」フォルダを作り、その中にこのリポジトリを clone** します。プロンプトが手元に揃い、成果物もここに保存されます。
 
-**Windows**
+**すでに「業務改善」がある場合は「業務改善2」「業務改善3」…と自動で連番になる**ので、前回の内容を上書きする心配はありません。そのままコピーして実行してください。
+
+**Windows**（PowerShell）
 
 ```powershell
-mkdir "$env:USERPROFILE\Desktop\業務改善" -Force
-cd "$env:USERPROFILE\Desktop\業務改善"
+$base = "$env:USERPROFILE\Desktop\業務改善"; $dir = $base; $i = 2
+while (Test-Path $dir) { $dir = "$base$i"; $i++ }
+New-Item -ItemType Directory -Path $dir | Out-Null
+Set-Location $dir
+git clone https://github.com/kouki485/setup_windwos.git
+Write-Host "作業フォルダ: $dir"
 ```
 
-**Mac**
+**Mac**（ターミナル）
 
 ```bash
-mkdir -p ~/Desktop/業務改善
-cd ~/Desktop/業務改善
+base="$HOME/Desktop/業務改善"; dir="$base"; i=2
+while [ -e "$dir" ]; do dir="$base$i"; i=$((i+1)); done
+mkdir -p "$dir" && cd "$dir"
+git clone https://github.com/kouki485/setup_windwos.git
+echo "作業フォルダ: $dir"
 ```
 
+実行すると、こうなります。
+
+```
+Desktop/業務改善/          ← ここが作業フォルダ（今ここにいます）
+  └── setup_windwos/       ← clone されたリポジトリ
+        ├── prompts/       ← プロンプト一式
+        └── README.md
+```
+
+2 回目に実行すると `Desktop/業務改善2/` が作られます。
+
 > **なぜフォルダを作るのか**: Claude は「今いるフォルダ」にファイルを作ります。準備せずに始めると、思わぬ場所に成果物が散らばります。
+>
+> **`git` が無いと言われた場合**: セットアップ後にターミナルを開き直してください。それでも駄目なら Git がインストールされていません。`install.bat` / `mac-setup.sh` をもう一度実行してください。
 
 #### ステップ 2. Claude を起動する
 
@@ -386,6 +408,7 @@ Claude が起動したら、こう入力します。
 
 ```
 Desktop/業務改善/
+  ├── setup_windwos/          ← ステップ1で clone したリポジトリ
   ├── 業務プロファイル.html   ← ダブルクリックで開く。共有・印刷用
   └── 業務プロファイル.md     ← 次の工程で Claude が読む
 ```
