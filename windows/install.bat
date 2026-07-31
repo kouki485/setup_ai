@@ -18,7 +18,7 @@ rem ============================================================
 setlocal
 
 set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/setup.ps1"
-set "EXPECTED_SHA256=a112ef09ea4262a2e1694327d679e944bef189ed7fddad008c9b09e3845083c1"
+set "EXPECTED_SHA256=c13e186989d74ba630307276cc83336be5cb3774d69f28b9c0c59c1efc7fa34d"
 set "DEST=%TEMP%\setup-ai-%RANDOM%-%RANDOM%.ps1"
 set "SETUP_AI_DEST=%DEST%"
 

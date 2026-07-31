@@ -56,6 +56,12 @@ if ! rg -q 'https://hermes-agent\.nousresearch\.com/install\.ps1' windows/setup.
     echo "windows/setup.ps1 の Hermes Agent 任意導入が安全な公式手順になっていません" >&2
     exit 1
 fi
+if ! perl -0777 -e \
+    '$d = <>; exit($d =~ /\$env:CODEX_NON_INTERACTIVE = "1"\r?\n[ \t]*Invoke-Installer "Codex CLI"/ ? 0 : 1)' \
+    windows/setup.ps1; then
+    echo "Windows の Codex インストーラが非対話モードになっていません" >&2
+    exit 1
+fi
 for script in mac/mac-setup.sh windows/setup.ps1 windows/wsl-setup.sh; do
     if ! rg -q 'Hermes Agent をインストールしますか[?？] \(y/N\)' "$script" \
         || ! rg -q 'hermes : 未導入（任意）' "$script"; then

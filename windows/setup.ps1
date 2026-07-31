@@ -525,6 +525,9 @@ if (Get-Command codex -ErrorAction SilentlyContinue) {
     if (Get-Command codex -ErrorAction SilentlyContinue) {
         Write-Ok "Codex CLI をインストールしました"
     } else {
+        # 公式インストーラ末尾の Codex 起動を抑止する。起動すると、その終了コードを
+        # インストール失敗と誤認してリトライするため。
+        $env:CODEX_NON_INTERACTIVE = "1"
         Invoke-Installer "Codex CLI" "https://chatgpt.com/codex/install.ps1" "codex"
     }
 }
