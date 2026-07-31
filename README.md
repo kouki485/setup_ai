@@ -11,6 +11,7 @@
 | **Claude Code** — ターミナルで動く AI コーディング支援（Anthropic 製） | ○ | ○ |
 | **Codex CLI** — 同上（OpenAI 製） | ○ | ○ |
 | **Hermes Agent** — 自律型 AI エージェント（Nous Research 製・任意選択） | 選択可 | 選択可 |
+| **Obsidian + MCP** — ノートを AI から操作（任意選択） | 選択可 | 選択可 |
 | **Claude Desktop** — 画面から使うデスクトップアプリ | ○ | ○ |
 | **Git** — 変更履歴を管理する道具 | ○ | ○ |
 | **Node.js (LTS)** — JavaScript の実行環境（npm 配布 CLI の導入に使用） | ○ | ○ |
@@ -30,6 +31,8 @@
 - Vercel CLI は既知の脆弱な依存ツリーを持つ Node.js 版を避け、`npm audit` で既知脆弱性 0 件を確認した公式ネイティブ版 58.4.0 を固定して導入します
 - npm 経由の導入ではパッケージのライフサイクルスクリプトを実行しません
 - Hermes Agent の公式インストーラは一旦ファイルへ保存し、構文確認後に別プロセスで実行します（`curl | bash` や `irm | iex` は使いません）
+- Obsidian MCP は、余分な npm 製プロキシを追加せず「Local REST API with MCP」プラグイン内蔵サーバーを使います
+- Obsidian MCP の設定ヘルパーは SHA-256 と構文を検証してから配置し、API Key を Git や通常の MCP 設定へ直書きしません
 - Windows 全体を管理者として実行せず、WSL の導入・更新操作だけ UAC で昇格します
 
 スクリプトは多数の開発ツールをインストールし、PATH やパッケージリポジトリを変更します。配布元と内容を確認できるこのリポジトリから取得してください。
@@ -52,6 +55,8 @@ Vercel の Windows ネイティブ版は現在 x64 のみです。Windows Arm64 
 契約は Claude Code / Claude Desktop なら **Claude Pro** または **Max**、Codex CLI なら **ChatGPT Plus** などが必要です。
 
 Hermes Agent は途中の質問で `y` を選んだ場合だけ入ります（既定値は `N`）。導入後は Nous Portal、OpenRouter、OpenAI など利用するモデル提供元の設定が別途必要です。
+
+Obsidian MCP も途中の質問で `y` を選んだ場合だけ入ります（既定値は `N`）。Obsidian のインストール後、利用する保管庫（Vault）ごとにコミュニティプラグインを有効化する手順が必要です。
 
 winget は Microsoft Store の「アプリ インストーラー」に含まれます。通常 Windows 10/11 には最初から入っていますが、古いと動かないことがあります。
 
@@ -106,6 +111,7 @@ claude      # ブラウザが開くので Claude アカウントでログイン
 codex       # ブラウザが開くので ChatGPT アカウントでログイン
 hermes setup           # Hermes Agent を選んだ場合。利用するモデル提供元を選択
 # Nous Portal を使う場合は: hermes setup --portal
+setup-obsidian-mcp     # Obsidian MCP を選び、下記のプラグイン設定を終えた場合
 ```
 
 Claude Desktop はスタートメニューから起動してサインインします。
@@ -128,6 +134,7 @@ claude      # ブラウザが開くので Claude アカウントでログイン
 codex       # ブラウザが開くので ChatGPT アカウントでログイン
 hermes setup           # Hermes Agent を選んだ場合。利用するモデル提供元を選択
 # Nous Portal を使う場合は: hermes setup --portal
+setup-obsidian-mcp     # Obsidian MCP を選び、下記のプラグイン設定を終えた場合
 ```
 
 Claude Desktop は Launchpad から起動してサインインします。実行ログはデスクトップの `ai-setup-log.txt` に残ります。
@@ -151,6 +158,36 @@ Homebrew の導入時だけ、Mac のログインパスワードを求められ�
 
 ---
 
+## Obsidian MCP を使う（任意）
+
+このセットアップでは、別プロセスの非公式 `obsidian-mcp` npm パッケージではなく、Obsidian コミュニティで配布されている [Local REST API with MCP](https://community.obsidian.md/plugins/obsidian-local-rest-api) の内蔵 Streamable HTTP MCP サーバーを使います。
+
+導入順は変えないでください。
+
+1. メインセットアップの「Obsidian MCP をインストールしますか？」で `y`
+2. Obsidian を起動し、既存の Vault を開くか新規作成
+3. 「設定 → コミュニティプラグイン」から **Local REST API with MCP** を導入して有効化
+4. 「設定 → Local REST API」で **Enable HTTP server** を有効化
+5. **Binding Host が `127.0.0.1`、Authorization header が `Authorization` のまま**であることを確認
+6. 表示された API Key をコピー
+7. 新しいターミナルで `setup-obsidian-mcp` を実行し、API Key を入力
+
+設定ヘルパーは、書き込み前にローカルAPIへ実際に接続して API Key を検証し、Claude Code / Codex CLI / 導入済みの Hermes Agent へ `obsidian` を登録します。既存の同名設定がある場合は、勝手に上書きせず確認します。
+
+```bash
+claude mcp get obsidian
+codex mcp get obsidian
+hermes mcp test obsidian   # Hermes Agent を導入した場合
+```
+
+> **重要**: この MCP にはノートの読み書き・削除や Obsidian コマンド実行機能があります。Vault のバックアップを取り、AI の変更内容を確認してください。API Key は共有・Git commit せず、Binding Host を `0.0.0.0` や LAN のアドレスへ変更しないでください。
+
+全クライアントで自己署名証明書を信頼させる操作を避けるため、設定ヘルパーはプラグインの HTTP ポート `127.0.0.1:27123` を使います。通信はループバック内だけですが暗号化されません。Mac のキーは `~/.config/setup-ai/obsidian-mcp.env`（権限 600）、Windows のキーはユーザー環境変数へ保存され、各 MCP 設定から環境変数として参照されます。
+
+Claude Desktop はリモート HTTP MCP を直接扱えないため自動設定しません。第三者製の `mcp-remote` ブリッジを自動実行することもありません。
+
+---
+
 ## WSL / Ubuntu の中にも入れる
 
 Windows 側とは別に、Ubuntu の中にも入れる作業です。**Ubuntu のターミナル**で実行します。
@@ -164,6 +201,8 @@ source ~/.bashrc
 基本パッケージ（`git` / `curl` / `unzip` / `build-essential` など）に加えて、Node.js LTS / GitHub CLI / Supabase CLI / Vercel CLI と、Claude Code / Codex CLI の Linux 版が入ります。途中で `y` を選ぶと Hermes Agent も追加されます。終わったら `claude` / `codex`、Hermes を選んだ場合は `hermes setup`（Nous Portal なら `hermes setup --portal`）で初期設定してください。
 
 > **ヒント**: WSL で作業するときは、ファイルを `/mnt/c/...`（Windows 側のフォルダ）ではなく `~/`（Ubuntu の中）に置いてください。読み書きの速度がはっきり変わります。
+>
+> Obsidian は Windows 側の GUI アプリとして動き、WSL2 から Windows のループバックへ到達できるかはネットワークモードで異なります。このため Obsidian MCP は Windows 側の Claude / Codex / Hermes にだけ自動設定します。
 
 ---
 
@@ -176,6 +215,9 @@ source ~/.bashrc
 | `claude` コマンドが見つからない | ターミナルを開き直してください。PATH の変更は新しく開いたターミナルにしか反映されません |
 | `npm` / `vercel` / `supabase` コマンドが見つからない | 同上。ターミナルを開き直しても見つからない場合は、結果一覧で `[NG]` になっていないか確認して再実行してください |
 | `hermes` コマンドが見つからない | セットアップ中の質問で `y` を選んだか確認してください。選択済みならターミナルを開き直し、それでも見つからなければ再実行してください |
+| `setup-obsidian-mcp` が見つからない | Obsidian MCP の質問で `y` を選んだか確認し、新しいターミナルを開いてください |
+| Obsidian MCP に接続できない | Obsidian を起動し、対象 Vault で Local REST API with MCP と Enable HTTP server の両方が有効か確認してください |
+| Obsidian MCP の API Key が拒否される | Local REST API の設定画面に現在表示されている API Key をコピーし直し、Authorization header が既定値か確認してください |
 | 「この Windows（ビルド …）は非対応です」と出て止まる | Windows Update で更新してから再実行してください（Windows 10 1809 以上が必要） |
 | 「式またはステートメントのトークン '}' を使用できません」等のエラーが大量に出る | 文字化けです。`irm` ではなく **`curl.exe`** でダウンロードし直してください |
 | WSL2 導入時の UAC をキャンセルした | 他のツールの処理は続きます。再実行して UAC を承認するか、IT 部門に WSL2 の導入を依頼してください |
@@ -189,7 +231,7 @@ source ~/.bashrc
 
 ```powershell
 (Get-FileHash "$env:TEMP\setup.ps1" -Algorithm SHA256).Hash
-# 5880a4fc63c368f4bb4a1c5fb61d054b9a288a1e57adf487d2632ae0900df4a1
+# a112ef09ea4262a2e1694327d679e944bef189ed7fddad008c9b09e3845083c1
 ```
 
 一致しないファイルは実行せず削除してください。通常は `install.bat` がこの確認を自動で行います。
@@ -209,8 +251,9 @@ source ~/.bashrc
 | **Windows 10 1809（ビルド 17763）以降**か | OS バージョン確認で中断します（1803 以前は `curl.exe` が無く `install.bat` の時点で停止します） |
 | **ビルド 19041 以降**か | WSL2 だけがスキップされ、他のツールは導入されます |
 | 各 PC で **UAC を承認できるか** | WSL2 の導入・更新ができません。IT 側で WSL を先に入れておくこともできます |
-| **winget** が使えるか | Git / Node.js / GitHub CLI / Claude Desktop がスキップされ、AI ツールのみ導入されます |
+| **winget** が使えるか | Git / Node.js / GitHub CLI / Claude Desktop / 選択した Obsidian がスキップされ、AI CLI の直接導入だけ続きます |
 | Hermes Agent を利用するか | 利用者がセットアップ中に選択します。既定では導入しません |
+| Obsidian MCP を利用するか | 利用者がセットアップ中に選択します。既定では導入せず、選択後も Vault 内でプラグインの有効化が必要です |
 | プロキシや**セキュリティ製品**が通信を書き換えないか | 改変を検知して安全に停止します |
 | 各利用者の **AI サービス契約**があるか | ツールは入ってもログインできません |
 
@@ -235,10 +278,12 @@ GitHub にアクセスできない環境では、`setup.ps1` と `wsl-setup.sh` 
 windows/
   install.bat       配布用の起動ファイル（ダブルクリックで実行）
   setup.ps1         セットアップ本体
+  setup-obsidian-mcp.ps1  Obsidian MCP を各 CLI に登録
   wsl-setup.sh      WSL / Ubuntu 内のセットアップ
 
 mac/
   mac-setup.sh      セットアップ本体（Homebrew の導入を含む）
+  setup-obsidian-mcp.sh   Obsidian MCP を各 CLI に登録
 
 prompts/            OS 共通。業務改善用のプロンプト → prompts/README.md
   business-discovery.md   業務ヒアリング（深掘り）
