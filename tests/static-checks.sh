@@ -42,6 +42,27 @@ if rg -n 'npm[^\n]*install' mac windows | rg -v -- '--ignore-scripts'; then
     exit 1
 fi
 
+for script in mac/mac-setup.sh windows/wsl-setup.sh; do
+    if ! rg -q 'https://hermes-agent\.nousresearch\.com/install\.sh' "$script" \
+        || ! rg -q 'bash -n "\$HERMES_INSTALLER"' "$script" \
+        || ! rg -q -- '--skip-setup --non-interactive' "$script"; then
+        echo "$script の Hermes Agent 任意導入が安全な公式手順になっていません" >&2
+        exit 1
+    fi
+done
+if ! rg -q 'https://hermes-agent\.nousresearch\.com/install\.ps1' windows/setup.ps1 \
+    || ! rg -q '"hermes" @\("-SkipSetup", "-NonInteractive"\)' windows/setup.ps1; then
+    echo "windows/setup.ps1 の Hermes Agent 任意導入が安全な公式手順になっていません" >&2
+    exit 1
+fi
+for script in mac/mac-setup.sh windows/setup.ps1 windows/wsl-setup.sh; do
+    if ! rg -q 'Hermes Agent をインストールしますか[?？] \(y/N\)' "$script" \
+        || ! rg -q 'hermes : 未導入（任意）' "$script"; then
+        echo "$script の Hermes Agent が既定スキップの任意選択になっていません" >&2
+        exit 1
+    fi
+done
+
 ps1_prefix="$(od -An -tx1 -N3 windows/setup.ps1 | tr -d ' \n')"
 if [ "$ps1_prefix" != "efbbbf" ]; then
     echo "windows/setup.ps1 の UTF-8 BOM がありません" >&2

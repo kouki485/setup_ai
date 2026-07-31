@@ -10,6 +10,7 @@
 |---|:---:|:---:|
 | **Claude Code** — ターミナルで動く AI コーディング支援（Anthropic 製） | ○ | ○ |
 | **Codex CLI** — 同上（OpenAI 製） | ○ | ○ |
+| **Hermes Agent** — 自律型 AI エージェント（Nous Research 製・任意選択） | 選択可 | 選択可 |
 | **Claude Desktop** — 画面から使うデスクトップアプリ | ○ | ○ |
 | **Git** — 変更履歴を管理する道具 | ○ | ○ |
 | **Node.js (LTS)** — JavaScript の実行環境（npm 配布 CLI の導入に使用） | ○ | ○ |
@@ -28,6 +29,7 @@
 - WSL では Node.js / GitHub CLI / Claude Code の署名鍵を照合します
 - Vercel CLI は既知の脆弱な依存ツリーを持つ Node.js 版を避け、`npm audit` で既知脆弱性 0 件を確認した公式ネイティブ版 58.4.0 を固定して導入します
 - npm 経由の導入ではパッケージのライフサイクルスクリプトを実行しません
+- Hermes Agent の公式インストーラは一旦ファイルへ保存し、構文確認後に別プロセスで実行します（`curl | bash` や `irm | iex` は使いません）
 - Windows 全体を管理者として実行せず、WSL の導入・更新操作だけ UAC で昇格します
 
 スクリプトは多数の開発ツールをインストールし、PATH やパッケージリポジトリを変更します。配布元と内容を確認できるこのリポジトリから取得してください。
@@ -48,6 +50,8 @@ Windows 10 ビルド 19041（バージョン 2004）未満では WSL2 だけが�
 Vercel の Windows ネイティブ版は現在 x64 のみです。Windows Arm64 では Vercel CLI だけ `[NG]` になりますが、WSL の Arm64 版は利用できます。
 
 契約は Claude Code / Claude Desktop なら **Claude Pro** または **Max**、Codex CLI なら **ChatGPT Plus** などが必要です。
+
+Hermes Agent は途中の質問で `y` を選んだ場合だけ入ります（既定値は `N`）。導入後は Nous Portal、OpenRouter、OpenAI など利用するモデル提供元の設定が別途必要です。
 
 winget は Microsoft Store の「アプリ インストーラー」に含まれます。通常 Windows 10/11 には最初から入っていますが、古いと動かないことがあります。
 
@@ -100,6 +104,8 @@ curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouk
 ```powershell
 claude      # ブラウザが開くので Claude アカウントでログイン
 codex       # ブラウザが開くので ChatGPT アカウントでログイン
+hermes setup           # Hermes Agent を選んだ場合。利用するモデル提供元を選択
+# Nous Portal を使う場合は: hermes setup --portal
 ```
 
 Claude Desktop はスタートメニューから起動してサインインします。
@@ -120,6 +126,8 @@ bash mac-setup.sh
 ```bash
 claude      # ブラウザが開くので Claude アカウントでログイン
 codex       # ブラウザが開くので ChatGPT アカウントでログイン
+hermes setup           # Hermes Agent を選んだ場合。利用するモデル提供元を選択
+# Nous Portal を使う場合は: hermes setup --portal
 ```
 
 Claude Desktop は Launchpad から起動してサインインします。実行ログはデスクトップの `ai-setup-log.txt` に残ります。
@@ -153,7 +161,7 @@ bash wsl-setup.sh
 source ~/.bashrc
 ```
 
-基本パッケージ（`git` / `curl` / `unzip` / `build-essential` など）に加えて、Node.js LTS / GitHub CLI / Supabase CLI / Vercel CLI と、Claude Code / Codex CLI の Linux 版が入ります。終わったら `claude` / `codex` でログインしてください。
+基本パッケージ（`git` / `curl` / `unzip` / `build-essential` など）に加えて、Node.js LTS / GitHub CLI / Supabase CLI / Vercel CLI と、Claude Code / Codex CLI の Linux 版が入ります。途中で `y` を選ぶと Hermes Agent も追加されます。終わったら `claude` / `codex`、Hermes を選んだ場合は `hermes setup`（Nous Portal なら `hermes setup --portal`）で初期設定してください。
 
 > **ヒント**: WSL で作業するときは、ファイルを `/mnt/c/...`（Windows 側のフォルダ）ではなく `~/`（Ubuntu の中）に置いてください。読み書きの速度がはっきり変わります。
 
@@ -167,6 +175,7 @@ source ~/.bashrc
 |---|---|
 | `claude` コマンドが見つからない | ターミナルを開き直してください。PATH の変更は新しく開いたターミナルにしか反映されません |
 | `npm` / `vercel` / `supabase` コマンドが見つからない | 同上。ターミナルを開き直しても見つからない場合は、結果一覧で `[NG]` になっていないか確認して再実行してください |
+| `hermes` コマンドが見つからない | セットアップ中の質問で `y` を選んだか確認してください。選択済みならターミナルを開き直し、それでも見つからなければ再実行してください |
 | 「この Windows（ビルド …）は非対応です」と出て止まる | Windows Update で更新してから再実行してください（Windows 10 1809 以上が必要） |
 | 「式またはステートメントのトークン '}' を使用できません」等のエラーが大量に出る | 文字化けです。`irm` ではなく **`curl.exe`** でダウンロードし直してください |
 | WSL2 導入時の UAC をキャンセルした | 他のツールの処理は続きます。再実行して UAC を承認するか、IT 部門に WSL2 の導入を依頼してください |
@@ -180,7 +189,7 @@ source ~/.bashrc
 
 ```powershell
 (Get-FileHash "$env:TEMP\setup.ps1" -Algorithm SHA256).Hash
-# 1a0cf414710c79daba01c969e56c7e22f461b788494285f1f28f785c4b98b781
+# 5880a4fc63c368f4bb4a1c5fb61d054b9a288a1e57adf487d2632ae0900df4a1
 ```
 
 一致しないファイルは実行せず削除してください。通常は `install.bat` がこの確認を自動で行います。
@@ -201,6 +210,7 @@ source ~/.bashrc
 | **ビルド 19041 以降**か | WSL2 だけがスキップされ、他のツールは導入されます |
 | 各 PC で **UAC を承認できるか** | WSL2 の導入・更新ができません。IT 側で WSL を先に入れておくこともできます |
 | **winget** が使えるか | Git / Node.js / GitHub CLI / Claude Desktop がスキップされ、AI ツールのみ導入されます |
+| Hermes Agent を利用するか | 利用者がセットアップ中に選択します。既定では導入しません |
 | プロキシや**セキュリティ製品**が通信を書き換えないか | 改変を検知して安全に停止します |
 | 各利用者の **AI サービス契約**があるか | ツールは入ってもログインできません |
 

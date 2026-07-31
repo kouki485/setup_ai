@@ -12,7 +12,8 @@
 #   7. Vercel CLI                (公式ネイティブ npm パッケージ)
 #   8. Claude Code               (Homebrew Cask)
 #   9. Codex CLI                 (Homebrew Cask)
-#  10. Claude Desktop            (GUIアプリ / Homebrew Cask)
+#  10. Hermes Agent              (任意 / Nous Research 公式インストーラ)
+#  11. Claude Desktop            (GUIアプリ / Homebrew Cask)
 #
 # 対応 OS: macOS 13 (Ventura) 以上。実行前にバージョンを確認します。
 #
@@ -30,7 +31,7 @@ umask 077
 
 # 全体の何番目を実行中かを常に見せる。長い処理が続くと利用者は
 # 「止まったのでは」と不安になり、強制終了してしまうため。
-TOTAL_STEPS=13
+TOTAL_STEPS=14
 STEP_NO=0
 
 step() {
@@ -386,7 +387,43 @@ else
 fi
 
 # ------------------------------------------------------------
-# 11. Claude Desktop (GUIアプリ)
+# 11. Hermes Agent（任意）
+# ------------------------------------------------------------
+step "Hermes Agent（任意）"
+
+if command -v hermes >/dev/null 2>&1; then
+    skip "インストール済み ($(hermes --version 2>/dev/null | head -n1))"
+else
+    printf '  Hermes Agent をインストールしますか？ (y/N): '
+    HERMES_ANSWER=""
+    IFS= read -r HERMES_ANSWER || HERMES_ANSWER=""
+    case "$HERMES_ANSWER" in
+        y|Y|yes|YES|Yes)
+            printf '  \033[90mNous Research の公式インストーラを取得しています...\033[0m\n'
+            HERMES_INSTALLER="$TMP_DIR/hermes-install.sh"
+            if download "https://hermes-agent.nousresearch.com/install.sh" "$HERMES_INSTALLER" \
+                && /bin/bash -n "$HERMES_INSTALLER" \
+                && /bin/bash "$HERMES_INSTALLER" --skip-setup --non-interactive; then
+                hash -r
+                if command -v hermes >/dev/null 2>&1; then
+                    ok "Hermes Agent をインストールしました ($(hermes --version 2>/dev/null | head -n1))"
+                else
+                    fail "インストール後も hermes コマンドが見つかりません"
+                    FAILED="$FAILED Hermes-Agent"
+                fi
+            else
+                fail "Hermes Agent の検証またはインストールに失敗しました"
+                FAILED="$FAILED Hermes-Agent"
+            fi
+            ;;
+        *)
+            skip "Hermes Agent は選択されなかったためスキップしました"
+            ;;
+    esac
+fi
+
+# ------------------------------------------------------------
+# 12. Claude Desktop (GUIアプリ)
 # ------------------------------------------------------------
 step "Claude Desktop"
 
@@ -405,7 +442,7 @@ else
 fi
 
 # ------------------------------------------------------------
-# 12. インストール結果
+# 13. インストール結果
 # ------------------------------------------------------------
 step "インストール結果"
 
@@ -417,6 +454,12 @@ for cmd in brew git node npm gh vercel supabase claude codex; do
         FAILED="$FAILED $cmd"
     fi
 done
+
+if command -v hermes >/dev/null 2>&1; then
+    ok "hermes : $(hermes --version 2>/dev/null | head -n1)"
+else
+    skip "hermes : 未導入（任意）"
+fi
 
 if [ -d "/Applications/Claude.app" ]; then
     ok "Claude Desktop : /Applications/Claude.app"
@@ -438,7 +481,9 @@ cat <<EOF
       ※ 今の画面でそのまま試すなら: source $PROFILE
    2. claude を実行 → ブラウザでログイン（Pro/Max等が必要）
    3. codex  を実行 → ブラウザでログイン（ChatGPT Plus等が必要）
-   4. Launchpad から Claude を起動 → アカウントでサインイン
+   4. Hermes を選んだ場合: hermes setup で初期設定
+      ※ Nous Portal を使う場合: hermes setup --portal
+   5. Launchpad から Claude を起動 → アカウントでサインイン
 
  業務での使い方は prompts/ のプロンプトを参照してください。
    business-discovery.md … 自分の業務を Claude に理解させる

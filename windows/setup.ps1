@@ -10,7 +10,8 @@
 #   6. Vercel CLI             (公式ネイティブ npm パッケージ)
 #   7. Claude Code (ネイティブ版)
 #   8. Codex CLI  (ネイティブ版)
-#   9. Claude Desktop (GUIアプリ)
+#   9. Hermes Agent (任意 / Nous Research 公式インストーラ)
+#  10. Claude Desktop (GUIアプリ)
 #
 # 対応 OS: Windows 10 1809 (ビルド 17763) 以上。実行前にバージョンを確認します。
 # WSL2 はビルド 19041 以上でのみインストールします。
@@ -526,7 +527,24 @@ if (Get-Command codex -ErrorAction SilentlyContinue) {
 }
 
 # ============================================================
-# 10. Claude Desktop（GUIアプリ）
+# 10. Hermes Agent（任意）
+# ============================================================
+Write-Step "Hermes Agent（任意）"
+
+if (Get-Command hermes -ErrorAction SilentlyContinue) {
+    Write-Skip "Hermes Agent はインストール済み ($(hermes --version 2>$null | Select-Object -First 1))"
+} else {
+    $hermesAnswer = Read-Host "Hermes Agent をインストールしますか? (y/N)"
+    if ($hermesAnswer -match "^(y|yes)$") {
+        Invoke-Installer "Hermes Agent" "https://hermes-agent.nousresearch.com/install.ps1" `
+            "hermes" @("-SkipSetup", "-NonInteractive")
+    } else {
+        Write-Skip "Hermes Agent は選択されなかったためスキップしました"
+    }
+}
+
+# ============================================================
+# 11. Claude Desktop（GUIアプリ）
 # ============================================================
 Write-Step "Claude Desktop"
 
@@ -548,7 +566,7 @@ if (-not $hasWinget) {
 }
 
 # ============================================================
-# 11. インストール確認
+# 12. インストール確認
 # ============================================================
 Write-Step "インストール結果"
 
@@ -562,6 +580,14 @@ foreach ($cmd in @("git", "node", "npm", "gh", "vercel", "supabase", "claude", "
         Add-Failure $cmd
         if ($cmd -eq "git" -and -not $hasWinget) { Write-Host "        → winget が無いため未導入です" -ForegroundColor DarkGray }
     }
+}
+
+$hermesCommand = Get-Command hermes -ErrorAction SilentlyContinue
+if ($hermesCommand) {
+    try { $hermesVersion = (& hermes --version 2>$null | Select-Object -First 1) } catch { $hermesVersion = "(version取得失敗)" }
+    Write-Ok "hermes : $hermesVersion"
+} else {
+    Write-Skip "hermes : 未導入（任意）"
 }
 
 if ($script:Failed.Count -gt 0) {
@@ -581,7 +607,9 @@ Write-Host "      ※ 今の画面でそのまま試すなら、次の1行を貼
 Write-Host '        $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")' -ForegroundColor DarkGray
 Write-Host "   2. claude を実行 → ブラウザでログイン（Pro/Max等が必要）" -ForegroundColor Green
 Write-Host "   3. codex  を実行 → ブラウザでログイン（ChatGPT Plus等が必要）" -ForegroundColor Green
-Write-Host "   4. スタートメニューから Claude を起動 → アカウントでサインイン" -ForegroundColor Green
+Write-Host "   4. Hermes を選んだ場合: hermes setup で初期設定" -ForegroundColor Green
+Write-Host "      ※ Nous Portal を使う場合: hermes setup --portal" -ForegroundColor Green
+Write-Host "   5. スタートメニューから Claude を起動 → アカウントでサインイン" -ForegroundColor Green
 Write-Host "" -ForegroundColor Green
 Write-Host " WSL側にもCLIを入れる場合は、Ubuntuターミナルで" -ForegroundColor Green
 Write-Host "   bash wsl-setup.sh を実行してください（windows フォルダ内にあります）。" -ForegroundColor Green
