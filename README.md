@@ -1,597 +1,307 @@
 # AI 開発環境 セットアップスクリプト（Windows / Mac）
 
-新品の Windows または Mac に、AI でコードを書くための道具を**まとめて自動インストール**するスクリプトです。
+新品の Windows または Mac に、AI でコードを書くための道具をまとめて入れます。手作業で 30 分以上かかる作業が、コマンド 2 行で終わります。
 
-ひとつずつ手作業で入れると 30 分以上かかる作業が、コマンド 2 行で終わります。
+> **インストールが終わったら** → [自分の業務を AI に手伝わせる](prompts/README.md)
 
----
+## 何が入るか
 
-## 何がインストールされるの？
+| | Windows | Mac |
+|---|:---:|:---:|
+| **Claude Code** — ターミナルで動く AI コーディング支援（Anthropic 製） | ○ | ○ |
+| **Codex CLI** — 同上（OpenAI 製） | ○ | ○ |
+| **Hermes Agent** — 自律型 AI エージェント（Nous Research 製・任意選択） | 選択可 | 選択可 |
+| **Obsidian + MCP** — ノートを AI から操作（任意選択） | 選択可 | 選択可 |
+| **Claude Desktop** — 画面から使うデスクトップアプリ | ○ | ○ |
+| **Git** — 変更履歴を管理する道具 | ○ | ○ |
+| **Node.js (LTS)** — JavaScript の実行環境（npm 配布 CLI の導入に使用） | ○ | ○ |
+| **GitHub CLI (gh)** — GitHub をコマンドで操作する道具 | ○ | ○ |
+| **Vercel CLI** — Vercel へのデプロイを行う公式ネイティブ CLI | ○ | ○ |
+| **Supabase CLI** — Supabase の開発・管理を行う道具 | ○ | ○ |
+| **WSL2 (Ubuntu)** — Windows の中で Linux を動かす仕組み | ○ | — |
+| **Homebrew / Xcode Command Line Tools** — Mac のソフト管理の土台 | — | ○ |
 
-| 入るもの | これは何？ |
+あわせて、`claude` などをコマンド名だけで呼び出せるよう **PATH** を設定します。
+
+## 安全性
+
+- Windows の `install.bat` は、取得した `setup.ps1` の SHA-256 が同梱値と一致した場合だけ実行します
+- Windows / WSL では Supabase CLI の配布元を公式 GitHub Release に限定し、SHA-256 を照合します
+- WSL では Node.js / GitHub CLI / Claude Code の署名鍵を照合します
+- Vercel CLI は既知の脆弱な依存ツリーを持つ Node.js 版を避け、`npm audit` で既知脆弱性 0 件を確認した公式ネイティブ版 58.4.0 を固定して導入します
+- npm 経由の導入ではパッケージのライフサイクルスクリプトを実行しません
+- Hermes Agent の公式インストーラは一旦ファイルへ保存し、構文確認後に別プロセスで実行します（`curl | bash` や `irm | iex` は使いません）
+- Obsidian MCP は、余分な npm 製プロキシを追加せず「Local REST API with MCP」プラグイン内蔵サーバーを使います
+- Obsidian MCP の設定ヘルパーは SHA-256 と構文を検証してから配置し、API Key を Git や通常の MCP 設定へ直書きしません
+- Windows 全体を管理者として実行せず、WSL の導入・更新操作だけ UAC で昇格します
+
+スクリプトは多数の開発ツールをインストールし、PATH やパッケージリポジトリを変更します。配布元と内容を確認できるこのリポジトリから取得してください。
+
+## 始める前に
+
+スクリプトは実行の最初に OS のバージョンを確認し、対応していない場合は何もインストールせずに止まります。
+
+| 必要なもの | 無いとどうなるか |
 |---|---|
-| **WSL2 (Ubuntu)** | Windows の中で Linux を動かす仕組み。開発作業が快適になります |
-| **Git for Windows** | プログラムの変更履歴を管理する道具。ほぼ全ての開発で必要です |
-| **Claude Code** | ターミナルで動く AI コーディング支援ツール（Anthropic製） |
-| **Codex CLI** | ターミナルで動く AI コーディング支援ツール（OpenAI製） |
-| **Claude Desktop** | Claude のデスクトップアプリ（画面から使うタイプ） |
+| **対応 OS**（Windows 10 1809 以上 / macOS 13 以上 / Ubuntu 20.04 以上） | 最初のバージョン確認で中断します。OS を更新してから再実行してください |
+| **UAC を承認できること**（Windows） | WSL2 の導入・更新だけ失敗します。他のユーザー向けツールは通常権限で入ります |
+| **アプリ インストーラー**（winget / Windows） | Git / Node.js / GitHub CLI / Claude Desktop がスキップされます |
+| **AI サービスの契約** | ツールは入りますが、ログインできません |
 
-あわせて `%USERPROFILE%\.local\bin` を **PATH** に追加します。PATH とは「コマンドを名前だけで呼び出せるようにする設定」です。これがないと `claude` と打っても「そんなコマンドは無い」と言われてしまいます。
+Windows 10 ビルド 19041（バージョン 2004）未満では WSL2 だけがスキップされ、他のツールは入ります。macOS 13 は動く可能性が高いものの Homebrew の公式サポート外のため、macOS 14 以上を推奨します。
 
----
+Vercel の Windows ネイティブ版は現在 x64 のみです。Windows Arm64 では Vercel CLI だけ `[NG]` になりますが、WSL の Arm64 版は利用できます。
 
-## 始める前に確認すること
+契約は Claude Code / Claude Desktop なら **Claude Pro** または **Max**、Codex CLI なら **ChatGPT Plus** などが必要です。
 
-### 1. 管理者権限があること
+Hermes Agent は途中の質問で `y` を選んだ場合だけ入ります（既定値は `N`）。導入後は Nous Portal、OpenRouter、OpenAI など利用するモデル提供元の設定が別途必要です。
 
-WSL2 のインストールには管理者権限が必要です。会社から借りている PC などで権限が無い場合、スクリプトは途中で止まります。
+Obsidian MCP も途中の質問で `y` を選んだ場合だけ入ります（既定値は `N`）。Obsidian のインストール後、利用する保管庫（Vault）ごとにコミュニティプラグインを有効化する手順が必要です。
 
-### 2. 「アプリ インストーラー」が入っていること
-
-Git と Claude Desktop のインストールに `winget` というコマンドを使います。これは Microsoft Store の「**アプリ インストーラー**」に含まれています。
-
-通常 Windows 10/11 には最初から入っていますが、古いままだと動かないことがあります。うまくいかない場合は Microsoft Store で「アプリ インストーラー」を検索して更新してください。
-
-### 3. AI サービスのアカウントが必要
-
-スクリプトは**ツールを入れるところまで**を自動化します。実際に AI を使うには、あなた自身のアカウントでログインが必要です。
-
-- Claude Code / Claude Desktop → **Claude Pro** または **Max** プラン
-- Codex CLI → **ChatGPT Plus** など
-
-無料プランでは使えない場合があります。
+winget は Microsoft Store の「アプリ インストーラー」に含まれます。通常 Windows 10/11 には最初から入っていますが、古いと動かないことがあります。
 
 ---
 
-## 使い方（かんたん版・おすすめ）
+## Windows で入れる
 
-**`install.bat` をダウンロードしてダブルクリックするだけ**です。コマンドを打つ必要はありません。
+### かんたん版（おすすめ）
 
-1. [install.bat をダウンロード](https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/install.bat)（リンクを右クリック →「名前を付けてリンク先を保存」）
+1. [install.bat をダウンロード](https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/install.bat)（右クリック →「名前を付けてリンク先を保存」）
 2. ダウンロードした `install.bat` を**ダブルクリック**
-3. 「このアプリがデバイスに変更を加えることを許可しますか？」→「**はい**」
+3. WSL2 の導入・更新で UAC が表示された場合だけ「はい」
 
-あとは自動で進みます。`install.bat` が次のことを代わりにやってくれます。
+本体のダウンロード、SHA-256 検証、実行まで自動で進みます。終わるとデスクトップに `ai-setup-log.txt` が残ります。うまくいかなかったときは、このファイルを担当者に送ってください。
 
-- 管理者権限への昇格（UAC の確認画面が出ます）
-- セットアップ本体のダウンロードと、壊れていないかの検証
-- スクリプトの実行（実行ポリシーの一時解除も自動）
+> Windows Defender や SmartScreen の警告が出たら「詳細情報」→「実行」。インターネットから入手したバッチファイルには必ず出ます。
 
-終わると**デスクトップに `ai-setup-log.txt`** が作られます。うまくいかなかったときは、このファイルを担当者に送ってください。
+### コマンド版
 
-> **Windows Defender や SmartScreen の警告が出た場合**: 「詳細情報」→「実行」を選んでください。インターネットから入手したバッチファイルには必ずこの警告が出ます。
-
----
-
-## 使い方（Windows 側・コマンドで実行する場合）
-
-`install.bat` を使わず自分でコマンドを打ちたい場合はこちらです。
-
-### 手順 1. PowerShell を管理者として開く
-
-1. スタートボタンを**右クリック**
-2. 「**ターミナル (管理者)**」または「**Windows PowerShell (管理者)**」を選ぶ
-3. 「このアプリがデバイスに変更を加えることを許可しますか？」→「**はい**」
-
-> 通常の PowerShell では WSL2 を入れられません。必ず管理者として開いてください。
-
-### 手順 2. 次の 2 行を貼り付けて実行
+通常の PowerShell で次の 2 行を実行します。取得した `install.bat` が、セットアップ本体の SHA-256 を検証してから実行します。
 
 ```powershell
-curl.exe -fsSL -o "$env:TEMP\setup.ps1" https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/setup.ps1
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup.ps1"
+curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/install.bat
+& "$env:TEMP\install.bat"
 ```
 
-1 行目でスクリプトをダウンロードし、2 行目で実行します。
-
 <details>
-<summary>この 2 行の意味（クリックで開く）</summary>
+<summary>この 2 行の意味</summary>
 
-- `curl.exe` … ファイルをダウンロードするコマンド
-- `-o "$env:TEMP\setup.ps1"` … 一時フォルダに `setup.ps1` という名前で保存する
-- `-ExecutionPolicy Bypass` … Windows は既定でスクリプトの実行をブロックするため、この 1 回だけ許可する設定。PC 全体の設定は変わりません
-- `-File` … 保存したファイルを実行する
-
-**`irm ... | iex` のような 1 行版は使わないでください。** このスクリプトは途中で `exit` を使うため、その書き方だと PowerShell の画面ごと閉じてしまいます。
+- `curl.exe` … 起動ファイルを一旦保存します
+- `&` … 保存した起動ファイルを実行します
+- 起動ファイルは `setup.ps1` を別の一時ファイルへ保存し、SHA-256 と UTF-8 BOM を確認します。不一致なら実行せず削除します
+- ダウンロード内容をその場で評価する `irm ... | iex` は使いません
 
 </details>
 
-### 手順 3. WSL2 が入っていない場合は 2 回実行する
-
-まだ WSL2 が入っていない PC では、**1 回目で WSL2 を入れて再起動を求めて終了**します。慌てず次の流れで進めてください。
+### WSL2 が未導入の PC は最後に再起動します
 
 ```
-1回目を実行
-  → WSL2 がインストールされる
-  → 「今すぐ再起動しますか? (y/N)」と聞かれる → y を入力（または後で手動で再起動）
-
-再起動したあと
-  → スタートメニューから「Ubuntu」を開く
-  → ユーザー名とパスワードを決めて入力（★これは必須。飛ばせません）
-     ※パスワードは入力しても画面に何も表示されませんが、ちゃんと入力されています
-
-もう一度、手順 2 の同じ 2 行を実行
-  → 残り（Git / Claude Code / Codex CLI / Claude Desktop）が入る
+1 回実行 → WSL2 と Windows 向けツールがすべて入り、最後に再起動を求められる
+再起動   → スタートメニューから「Ubuntu」を開き、ユーザー名とパスワードを決める（必須）
 ```
 
-WSL2 が既に入っている PC なら 1 回で終わります。
+パスワードは入力しても画面に何も表示されませんが、ちゃんと入力されています。Windows 向けツールを入れるためにセットアップを 2 回実行する必要はありません。
 
-### 手順 4. 新しいターミナルを開いてログイン
+### 終わったらログイン
 
-インストール直後の画面では、まだ `claude` などのコマンドが認識されません。**必ず新しいターミナルを開き直してください**（PATH の設定を反映するため）。
-
-そのうえで、順番にログインします。
+**必ず新しいターミナルを開き直してから**（PATH の設定を反映するため）実行します。
 
 ```powershell
 claude      # ブラウザが開くので Claude アカウントでログイン
 codex       # ブラウザが開くので ChatGPT アカウントでログイン
+hermes setup           # Hermes Agent を選んだ場合。利用するモデル提供元を選択
+# Nous Portal を使う場合は: hermes setup --portal
+setup-obsidian-mcp     # Obsidian MCP を選び、下記のプラグイン設定を終えた場合
 ```
 
 Claude Desktop はスタートメニューから起動してサインインします。
 
 ---
 
-## 使い方（WSL / Ubuntu 側）
+## Mac で入れる
 
-WSL の中でも AI ツールを使いたい場合に実行します。Windows 側とは別に、Ubuntu の中にもインストールする作業です。
-
-**Ubuntu のターミナル**を開いて、次の 2 行を実行します。
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/wsl-setup.sh -o wsl-setup.sh
-bash wsl-setup.sh
-```
-
-入るものは次の 3 つです。
-
-1. 基本パッケージ（`git` / `curl` / `unzip` / `build-essential`）
-2. Claude Code（Linux 版）
-3. Codex CLI（Linux 版）
-
-終わったら設定を読み込み直してログインします。
-
-```bash
-source ~/.bashrc
-claude
-codex
-```
-
-> **ヒント**: WSL で作業するときは、ファイルを `/mnt/c/...`（Windows 側のフォルダ）ではなく `~/`（Ubuntu の中）に置いてください。読み書きの速度がはっきり変わります。
-
----
-
-## このスクリプトの親切な仕様
-
-### 何度実行しても安全です
-
-すでに入っているものは `[SKIP]` と表示して飛ばします。途中で失敗したら、そのままもう一度実行してください。成功済みの部分はやり直しません。
-
-### 通信エラーには自動で 3 回まで再挑戦します
-
-ダウンロードが一時的に失敗しても、5 秒待って自動でやり直します。
-
-### 一部が失敗しても最後まで進みます
-
-途中で 1 つ失敗しても止まりません。最後に結果の一覧を表示します。
-
-```
-==> インストール結果
-  [OK] git : git version 2.51.0.windows.1
-  [OK] claude : 2.1.220
-  [NG] codex が見つかりません（ターミナル再起動後に再確認してください）
-```
-
-`[NG]` が出た項目だけ、あとから対処すれば大丈夫です。
-
----
-
-## うまくいかないときは
-
-### 「式またはステートメントのトークン '}' を使用できません」のようなエラーが大量に出る
-
-**文字化けが原因**です。ダウンロードの方法を間違えている可能性があります。
-
-`irm`（Invoke-RestMethod）ではなく、必ず **`curl.exe`** を使ってください。`irm` はファイルの先頭にある「BOM」という目印を落としてしまうことがあり、そうなると Windows PowerShell が日本語部分を読み間違えてスクリプト全体が壊れます。
-
-ダウンロードしたファイルが正しいかは、次のコマンドで確認できます（`True` と出れば正常）。
-
-```powershell
-[System.IO.File]::ReadAllBytes("$env:TEMP\setup.ps1")[0..2] -join ',' -eq '239,187,191'
-```
-
-`False` の場合は、いったんファイルを削除してから `curl.exe` でもう一度ダウンロードしてください。
-
-### 「WSL2のインストールには管理者権限が必要です」と出て止まる
-
-PowerShell を管理者として開いていません。手順 1 をやり直してください。
-
-### 「winget が見つかりません」と出て止まる
-
-Microsoft Store で「**アプリ インストーラー**」を検索して、インストールまたは更新してください。
-
-### インストールしたのに `claude` コマンドが見つからない
-
-ターミナルを開き直してください。PATH の変更は、新しく開いたターミナルにしか反映されません。
-
-### スクリプトの実行がブロックされる
-
-会社や学校の PC では、管理者がグループポリシーでスクリプト実行を禁止している場合があります。この場合 `-ExecutionPolicy Bypass` を付けても実行できません。IT 部門に相談してください。
-
----
-
-## 使い方（Mac の場合）
-
-Mac では **`mac-setup.sh`** を使います。`install.bat` や `setup.ps1` は Windows 専用なので使えません。
-
-ターミナル（アプリケーション → ユーティリティ → ターミナル）を開いて、次の 2 行を実行します。
+`install.bat` や `setup.ps1` は Windows 専用です。Mac ではターミナル（アプリケーション → ユーティリティ → ターミナル）で次の 2 行を実行します。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/main/mac/mac-setup.sh -o mac-setup.sh
 bash mac-setup.sh
 ```
 
-入るものは次の 6 つです。
-
-| 入るもの | 説明 |
-|---|---|
-| **Xcode Command Line Tools** | Homebrew を動かすための前提。Apple 純正の開発ツール |
-| **Homebrew** | Mac 用のソフト管理ツール。以降のインストールに使います |
-| **Git** | 変更履歴の管理ツール（Command Line Tools に含まれるため通常はスキップされます） |
-| **Claude Code** | ターミナルで動く AI コーディング支援ツール |
-| **Codex CLI** | 同上（OpenAI 製） |
-| **Claude Desktop** | Claude のデスクトップアプリ |
-
-### Mac 特有の注意点
-
-**パスワードを 1 回聞かれます**
-
-Homebrew の導入時だけ、Mac のログインパスワードを求められます。入力しても**画面には何も表示されません**が、ちゃんと入力されています。そのまま Enter を押してください。
-
-Homebrew が既に入っている場合、パスワードは聞かれません。
-
-**Xcode Command Line Tools のダイアログが出ます**
-
-初回のみ「ソフトウェアをインストールしますか？」というダイアログが表示されます。「**インストール**」を選んでください。数分かかります。スクリプトは完了を自動で待ちます。
-
-**Apple Silicon と Intel でインストール先が変わります**
-
-スクリプトが自動で判定します。
-
-- Apple Silicon（M1〜M4）: `/opt/homebrew`
-- Intel: `/usr/local`
-
-Apple Silicon の Mac では Homebrew のコマンドが初期状態で認識されないため、`~/.zprofile` に設定を自動で追記します。
-
-**終わったら新しいターミナルを開いてください**
-
-設定の反映のためです。今の画面でそのまま試したい場合は次を実行します。
-
-```bash
-source ~/.zprofile
-```
-
-### ログイン
+終わったら**新しいターミナルを開いて**ログインします。
 
 ```bash
 claude      # ブラウザが開くので Claude アカウントでログイン
 codex       # ブラウザが開くので ChatGPT アカウントでログイン
+hermes setup           # Hermes Agent を選んだ場合。利用するモデル提供元を選択
+# Nous Portal を使う場合は: hermes setup --portal
+setup-obsidian-mcp     # Obsidian MCP を選び、下記のプラグイン設定を終えた場合
 ```
 
-Claude Desktop は Launchpad から起動してサインインします。
+Claude Desktop は Launchpad から起動してサインインします。実行ログはデスクトップの `ai-setup-log.txt` に残ります。
 
-実行ログは**デスクトップの `ai-setup-log.txt`** に残ります。
+<details>
+<summary>Mac 特有の注意 3 点</summary>
+
+**パスワードを 1 回聞かれます**
+
+Homebrew の導入時だけ、Mac のログインパスワードを求められます。入力しても画面には何も表示されませんが、ちゃんと入力されています。そのまま Enter を押してください。Homebrew が既に入っている場合は聞かれません。
+
+**Xcode Command Line Tools のダイアログが出ます**
+
+初回のみ「ソフトウェアをインストールしますか？」が表示されます。「インストール」を選んでください。数分かかりますが、スクリプトは完了を自動で待ちます。
+
+**Apple Silicon と Intel でインストール先が変わります**
+
+スクリプトが自動で判定します（Apple Silicon: `/opt/homebrew` / Intel: `/usr/local`）。Apple Silicon では Homebrew のコマンドが初期状態で認識されないため、`~/.zprofile` に設定を自動追記します。今の画面でそのまま試したい場合は `source ~/.zprofile` を実行してください。
+
+</details>
 
 ---
 
-## インストール後: 自分の業務を AI に手伝わせる
+## Obsidian MCP を使う（任意）
 
-ツールを入れただけでは仕事は楽になりません。**Claude にあなたの業務を理解させる**ところから始めてください。そのためのプロンプトを `prompts/` に用意しています。
+このセットアップでは、別プロセスの非公式 `obsidian-mcp` npm パッケージではなく、Obsidian コミュニティで配布されている [Local REST API with MCP](https://community.obsidian.md/plugins/obsidian-local-rest-api) の内蔵 Streamable HTTP MCP サーバーを使います。
 
-### 使う順番
+導入順は変えないでください。
 
-| ステップ | プロンプト | やること | 所要時間 |
-|---|---|---|---|
-| 1 | [`prompts/business-discovery.md`](prompts/business-discovery.md) | Claude があなたの業務を**ヒアリングして深掘り**し、`業務プロファイル.md` と `業務プロファイル.html` を作る | 30〜40分 |
-| 2 | [`prompts/ax-proposal.md`](prompts/ax-proposal.md) | その内容を元に、**AI で楽にできる部分**を洗い出して優先順位を付ける | 20〜30分 |
+1. メインセットアップの「Obsidian MCP をインストールしますか？」で `y`
+2. Obsidian を起動し、既存の Vault を開くか新規作成
+3. 「設定 → コミュニティプラグイン」から **Local REST API with MCP** を導入して有効化
+4. 「設定 → Local REST API」で **Enable HTTP server** を有効化
+5. **Binding Host が `127.0.0.1`、Authorization header が `Authorization` のまま**であることを確認
+6. 表示された API Key をコピー
+7. 新しいターミナルで `setup-obsidian-mcp` を実行し、API Key を入力
 
-ステップ 1 では Claude が質問してくるので、答えていくだけです。**AI に何ができるか知らなくても構いません。** 普段の仕事をそのまま話してください。
-
-成果物は **HTML と Markdown の 2 形式**で作られます。`業務プロファイル.html` はダブルクリックでブラウザで開けるので、上司や同僚への共有、印刷、PDF 化に使えます。外部のファイルを参照しない単一ファイルなので、オフラインでもメール添付でも崩れません。`業務プロファイル.md` は次の工程で Claude が読むためのものです。
-
-### 最初に 1 回だけやる準備（2 分）
-
-プロンプトを**スラッシュコマンドとして登録**します。一度やれば以降は `/business-discovery` と打つだけで呼び出せます。
-
-**Windows**（PowerShell）
-
-```powershell
-mkdir "$env:USERPROFILE\.claude\commands" -Force
-curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\business-discovery.md" https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/business-discovery.md
-curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\ax-proposal.md" https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/ax-proposal.md
-```
-
-**Mac**（ターミナル）
+設定ヘルパーは、書き込み前にローカルAPIへ実際に接続して API Key を検証し、Claude Code / Codex CLI / 導入済みの Hermes Agent へ `obsidian` を登録します。既存の同名設定がある場合は、勝手に上書きせず確認します。
 
 ```bash
-mkdir -p ~/.claude/commands
-curl -fsSL -o ~/.claude/commands/business-discovery.md https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/business-discovery.md
-curl -fsSL -o ~/.claude/commands/ax-proposal.md https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/ax-proposal.md
+claude mcp get obsidian
+codex mcp get obsidian
+hermes mcp test obsidian   # Hermes Agent を導入した場合
 ```
+
+> **重要**: この MCP にはノートの読み書き・削除や Obsidian コマンド実行機能があります。Vault のバックアップを取り、AI の変更内容を確認してください。API Key は共有・Git commit せず、Binding Host を `0.0.0.0` や LAN のアドレスへ変更しないでください。
+
+全クライアントで自己署名証明書を信頼させる操作を避けるため、設定ヘルパーはプラグインの HTTP ポート `127.0.0.1:27123` を使います。通信はループバック内だけですが暗号化されません。Mac のキーは `~/.config/setup-ai/obsidian-mcp.env`（権限 600）、Windows のキーはユーザー環境変数へ保存され、各 MCP 設定から環境変数として参照されます。
+
+Claude Desktop はリモート HTTP MCP を直接扱えないため自動設定しません。第三者製の `mcp-remote` ブリッジを自動実行することもありません。
 
 ---
 
-### 実際の使い方（ステップバイステップ）
+## WSL / Ubuntu の中にも入れる
 
-#### ステップ 1. 作業フォルダを作って移動する
-
-デスクトップに **「業務改善」フォルダを作り、その中にこのリポジトリを clone** します。プロンプトが手元に揃い、成果物もここに保存されます。
-
-**すでに「業務改善」がある場合は「業務改善2」「業務改善3」…と自動で連番になる**ので、前回の内容を上書きする心配はありません。そのままコピーして実行してください。
-
-**Windows**（PowerShell）
-
-```powershell
-$base = "$env:USERPROFILE\Desktop\業務改善"; $dir = $base; $i = 2
-while (Test-Path $dir) { $dir = "$base$i"; $i++ }
-New-Item -ItemType Directory -Path $dir | Out-Null
-Set-Location $dir
-git clone https://github.com/kouki485/setup_ai.git
-Write-Host "作業フォルダ: $dir"
-```
-
-**Mac**（ターミナル）
+Windows 側とは別に、Ubuntu の中にも入れる作業です。**Ubuntu のターミナル**で実行します。
 
 ```bash
-base="$HOME/Desktop/業務改善"; dir="$base"; i=2
-while [ -e "$dir" ]; do dir="$base$i"; i=$((i+1)); done
-mkdir -p "$dir" && cd "$dir"
-git clone https://github.com/kouki485/setup_ai.git
-echo "作業フォルダ: $dir"
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/wsl-setup.sh -o wsl-setup.sh
+bash wsl-setup.sh
+source ~/.bashrc
 ```
 
-実行すると、こうなります。
+基本パッケージ（`git` / `curl` / `unzip` / `build-essential` など）に加えて、Node.js LTS / GitHub CLI / Supabase CLI / Vercel CLI と、Claude Code / Codex CLI の Linux 版が入ります。途中で `y` を選ぶと Hermes Agent も追加されます。終わったら `claude` / `codex`、Hermes を選んだ場合は `hermes setup`（Nous Portal なら `hermes setup --portal`）で初期設定してください。
 
-```
-Desktop/業務改善/          ← ここが作業フォルダ（今ここにいます）
-  └── setup_ai/       ← clone されたリポジトリ
-        ├── prompts/       ← プロンプト一式
-        └── README.md
-```
-
-2 回目に実行すると `Desktop/業務改善2/` が作られます。
-
-> **なぜフォルダを作るのか**: Claude は「今いるフォルダ」にファイルを作ります。準備せずに始めると、思わぬ場所に成果物が散らばります。
+> **ヒント**: WSL で作業するときは、ファイルを `/mnt/c/...`（Windows 側のフォルダ）ではなく `~/`（Ubuntu の中）に置いてください。読み書きの速度がはっきり変わります。
 >
-> **`git` が無いと言われた場合**: セットアップ後にターミナルを開き直してください。それでも駄目なら Git がインストールされていません。`install.bat` / `mac-setup.sh` をもう一度実行してください。
-
-#### ステップ 2. Claude を起動する
-
-```
-claude
-```
-
-初回はブラウザが開いてログインを求められます。Claude Pro / Max のアカウントでログインしてください。
-
-#### ステップ 3. ヒアリングを開始する
-
-Claude が起動したら、こう入力します。
-
-```
-/business-discovery
-```
-
-すると Claude が質問を始めます。最初はこう聞かれます。
-
-```
-所属部署と役割、担当している仕事をざっくり教えてください
-```
-
-#### ステップ 4. 質問に答える（30〜40 分）
-
-**普段の仕事をそのまま話すだけです。** AI に何ができるかを考える必要はありません。
-
-質問は 1〜2 個ずつ来るので、順番に答えてください。答え方のコツは 3 つです。
-
-| コツ | 例 |
-|---|---|
-| **具体的に答える** | 「報告書を作る」より「毎週金曜に売上を Excel から集めて Word にまとめる」 |
-| **時間を数字で答える** | 「けっこうかかる」より「だいたい 90 分」。正確でなくて構いません |
-| **面倒だと思うことは正直に言う** | ここが一番改善につながります |
-
-途中で**「分からない」「覚えていない」でも大丈夫**です。そのまま伝えてください。「未確認」として記録され、後から追加できます。
-
-#### ステップ 5. 内容を確認する
-
-ヒアリングが終わると、Claude が把握した内容を要約して見せてきます。**間違いがあればその場で指摘してください。** 修正が反映されてからファイルが作られます。
-
-確認が済むと、ステップ 1 で作ったフォルダに 2 つのファイルができます。
-
-```
-Desktop/業務改善/
-  ├── setup_ai/          ← ステップ1で clone したリポジトリ
-  ├── 業務プロファイル.html   ← ダブルクリックで開く。共有・印刷用
-  └── 業務プロファイル.md     ← 次の工程で Claude が読む
-```
-
-`業務プロファイル.html` をダブルクリックして開いてみてください。業務件数と月間の合計時間が冒頭に出て、時間がかかっている業務から順に並んでいます。**印刷や PDF 化はブラウザの `Ctrl+P` / `Cmd+P`** からできます。
-
-#### ステップ 6. AX 提案を受ける（20〜30 分）
-
-**いったん Claude を終了して、新しいセッションで始めてください。** 同じフォルダにいる状態で、
-
-```
-claude
-```
-
-起動したら、
-
-```
-/ax-proposal
-```
-
-Claude が `業務プロファイル.md` を読み込み、次を出します。
-
-- 業務を **A（今すぐできる）/ B（準備が必要）/ C（仕組みが必要）/ D（適さない）** に分類
-- 効果が大きい順の優先順位
-- 上位 3 件について**そのままコピーして使えるプロンプト**
-- 対象外にすべき業務とその理由
-
-成果物は `AX提案.md` としてフォルダに保存されます。
-
-> **なぜセッションを分けるのか**: ヒアリングの会話が残っていると、Claude が「さっき話した内容」に引きずられます。ファイルを読み直させた方が、抜けのない提案になります。
-
-#### ステップ 7. 実際に試す
-
-`AX提案.md` の「今すぐ試せる提案」に書かれたプロンプトを、**1 番だけ**試してください。
-
-Claude を起動して、プロンプトをコピーして貼り、`【ここに◯◯を貼る】` の部分を実際の資料に差し替えるだけです。
-
-**一度に全部やらないでください。** 1 つが習慣になってから次に進む方が定着します。
-
-期待どおりでなかった場合は、Claude にそのまま伝えてプロンプトを直してもらってください。**ズレを直す作業が本番です。**
+> Obsidian は Windows 側の GUI アプリとして動き、WSL2 から Windows のループバックへ到達できるかはネットワークモードで異なります。このため Obsidian MCP は Windows 側の Claude / Codex / Hermes にだけ自動設定します。
 
 ---
 
-### 使う前に確認すること
+## うまくいかないとき
 
-**会社が承認している AI 環境かどうか**
+**何度実行しても安全です。** 導入済みの項目は `[SKIP]` と表示して飛ばし、直接ダウンロードする処理は通信エラー時に 3 回まで再挑戦します。1 つ失敗しても止まらず最後まで進み、結果の一覧を表示します。`[NG]` が出た項目だけ、あとから対処すれば大丈夫です。
 
-業務情報を扱うので、会社が利用を認めた環境で使ってください。不明な場合は情報システム部門に確認してください。
+| 症状 | 対処 |
+|---|---|
+| `claude` コマンドが見つからない | ターミナルを開き直してください。PATH の変更は新しく開いたターミナルにしか反映されません |
+| `npm` / `vercel` / `supabase` コマンドが見つからない | 同上。ターミナルを開き直しても見つからない場合は、結果一覧で `[NG]` になっていないか確認して再実行してください |
+| `hermes` コマンドが見つからない | セットアップ中の質問で `y` を選んだか確認してください。選択済みならターミナルを開き直し、それでも見つからなければ再実行してください |
+| `setup-obsidian-mcp` が見つからない | Obsidian MCP の質問で `y` を選んだか確認し、新しいターミナルを開いてください |
+| Obsidian MCP に接続できない | Obsidian を起動し、対象 Vault で Local REST API with MCP と Enable HTTP server の両方が有効か確認してください |
+| Obsidian MCP の API Key が拒否される | Local REST API の設定画面に現在表示されている API Key をコピーし直し、Authorization header が既定値か確認してください |
+| 「この Windows（ビルド …）は非対応です」と出て止まる | Windows Update で更新してから再実行してください（Windows 10 1809 以上が必要） |
+| 「式またはステートメントのトークン '}' を使用できません」等のエラーが大量に出る | 文字化けです。`irm` ではなく **`curl.exe`** でダウンロードし直してください |
+| WSL2 導入時の UAC をキャンセルした | 他のツールの処理は続きます。再実行して UAC を承認するか、IT 部門に WSL2 の導入を依頼してください |
+| 「winget が見つかりません」と出て止まる | Microsoft Store で「アプリ インストーラー」を検索して更新してください |
+| スクリプトの実行がブロックされる | グループポリシーの制限です。`-ExecutionPolicy Bypass` でも回避できません。IT 部門に相談してください |
 
-**話してよい情報の範囲**
+<details>
+<summary>セットアップ本体の SHA-256 を手動確認する（Windows）</summary>
 
-プロンプトには次の制約を組み込んでいますが、念のため把握しておいてください。
+現在の `install.bat` が許可する値は次の通りです。
 
-- パスワード、API キー、認証コードは**聞かれませんし、記録もされません**
-- 顧客名や案件名は、業務理解に不要なら仮名に置き換えられます
-- 機密情報については「種類」「保管場所」「持ち出し可否」だけを確認し、**中身は見せる必要がありません**
+```powershell
+(Get-FileHash "$env:TEMP\setup.ps1" -Algorithm SHA256).Hash
+# a112ef09ea4262a2e1694327d679e944bef189ed7fddad008c9b09e3845083c1
+```
 
-**成果物の取り扱い**
+一致しないファイルは実行せず削除してください。通常は `install.bat` がこの確認を自動で行います。
 
-`業務プロファイル.html` には業務の詳細が書かれています。共有範囲は社内ルールに従ってください。
+</details>
 
 ---
 
-### 困ったときは
+## 管理者・IT 担当者向け（複数台に配る場合）
 
-| 状況 | どうするか |
+**`install.bat` だけを配れば十分です。** セットアップ本体は実行時に GitHub から取得され、同梱の SHA-256 と一致した場合だけ動きます。共有フォルダ、Slack、Teams、メール添付など普段の経路で構いません。利用者への案内は「ダウンロードしてダブルクリック。WSL の UAC が出た場合だけ『はい』」で足ります。
+
+配布前に確認しておくこと:
+
+| 項目 | 満たさない場合 |
 |---|---|
-| **途中で中断したい** | `Ctrl+C` で終了して構いません。次回また `/business-discovery` から始めてください（最初からになります） |
-| **時間が足りなかった** | 主要な業務が 5〜8 個拾えれば十分です。残りは「未確認」として記録されます |
-| **`/business-discovery` が反応しない** | 準備のコマンドを実行し忘れています。上の「最初に 1 回だけやる準備」をやり直してください |
-| **成果物が見つからない** | ステップ 1 のフォルダに移動せずに始めた可能性があります。Claude に「作ったファイルの場所を教えて」と聞いてください |
-| **`claude` コマンドが無いと言われる** | ターミナルを開き直してください（PATH の反映のため） |
-| **提案が的外れ** | 業務プロファイルの理解が浅い可能性があります。`/business-discovery` に戻って、その業務だけ追加で深掘りしてください |
+| **Windows 10 1809（ビルド 17763）以降**か | OS バージョン確認で中断します（1803 以前は `curl.exe` が無く `install.bat` の時点で停止します） |
+| **ビルド 19041 以降**か | WSL2 だけがスキップされ、他のツールは導入されます |
+| 各 PC で **UAC を承認できるか** | WSL2 の導入・更新ができません。IT 側で WSL を先に入れておくこともできます |
+| **winget** が使えるか | Git / Node.js / GitHub CLI / Claude Desktop / 選択した Obsidian がスキップされ、AI CLI の直接導入だけ続きます |
+| Hermes Agent を利用するか | 利用者がセットアップ中に選択します。既定では導入しません |
+| Obsidian MCP を利用するか | 利用者がセットアップ中に選択します。既定では導入せず、選択後も Vault 内でプラグインの有効化が必要です |
+| プロキシや**セキュリティ製品**が通信を書き換えないか | 改変を検知して安全に停止します |
+| 各利用者の **AI サービス契約**があるか | ツールは入ってもログインできません |
 
-### 部下や同僚にやってもらう場合
-
-ヒアリングは**本人が自分でやる**のが最も効果的です。他人が代行すると、細かい判断や手戻りの実態が出てきません。
-
-管理者側でやることは次の 3 つで足ります。
-
-1. セットアップ（`install.bat` または `mac-setup.sh`）を配る
-2. 上の「最初に 1 回だけやる準備」のコマンドを配る
-3. 「`claude` を起動して `/business-discovery` と打って、30 分質問に答えてください」と伝える
-
-出来上がった `業務プロファイル.html` を集めれば、**部署全体でどこに時間が使われているか**が見えます。
-
-### なぜ 2 段階に分けているのか
-
-業務を聞きながら同時に AI 活用を提案させると、**提案の質が落ちます**。「AI にできそうなこと」に話が寄ってしまい、本当に時間を食っている作業が埋もれるためです。
-
-そのためステップ 1 のプロンプトは、AI の話を意図的に禁止しています。まず業務を正確に理解し、それから提案する順序にしてください。
-
-### 期待してよいこと・できないこと
-
-| できること | できないこと |
-|---|---|
-| 文章の下書き、要約、分類、書き換え | 社内の最新情報や固有の事実を知ること（渡す必要あり） |
-| 判断基準が言語化できる作業の支援 | 数値の計算・集計の精度保証（必ず検証が必要） |
-| 過去の書き方に合わせた文章生成 | 責任を伴う最終判断 |
-| 暗黙知の言語化・マニュアル化 | 社外に出せない情報の処理（扱い方の設計が必要） |
-
-ステップ 2 のプロンプトは、**AI に任せるべきでない業務を「対象外」として明示する**よう指示しています。できないことを正直に出す方が、長く使える提案になります。
-
----
-
-## 管理者・IT 担当者向け（複数台へ配布する場合）
-
-社内の複数の PC に同じ環境を作る場合の推奨手順です。
-
-### 配布方法
-
-**`install.bat` だけを配れば十分です。** 社内の共有フォルダ、Slack、Teams、メール添付など、普段使っている経路で構いません。セットアップ本体（`setup.ps1`）は実行時に GitHub から取得されるので、配布物は 1 ファイルで済みます。
-
-利用者への案内は「**ダウンロードしてダブルクリック、UAC が出たら「はい」**」の一文で足ります。
-
-### 配布前に確認しておくこと
-
-| 確認項目 | 理由 |
-|---|---|
-| 各 PC に**管理者権限**があるか | WSL2 の導入に必須。無い場合は事前に付与するか、IT 側で WSL を先に入れておく |
-| **winget** が使えるか | Git と Claude Desktop の導入に使用。無い場合はその 2 つがスキップされ、AI ツールのみ導入される |
-| **Windows 10 1803 以降**か | `curl.exe` が標準搭載されているバージョン。それ以前だと `install.bat` が停止する |
-| プロキシや**セキュリティ製品**が通信を書き換えないか | ファイルが改変されると `install.bat` が「BOM が無い」と検知して安全に停止します |
-| 各利用者の**AI サービス契約**があるか | Claude Pro/Max、ChatGPT Plus など。ツールは入っても未契約ではログインできません |
-
-### 全台で結果を揃えるために
-
-- **何度実行しても安全**です。導入済みの項目はスキップされるため、失敗した端末で再実行するだけで復旧します
-- **WSL2 が未導入の端末では 2 回実行が必要**です（1 回目で WSL2 を入れて再起動 → Ubuntu の初期設定 → 2 回目で残りを導入）。すでに WSL2 が入っている端末は 1 回で完了します
-- 各端末の**デスクトップに `ai-setup-log.txt`** が残ります。トラブル時はこれを回収すれば原因が特定できます
-- 特定のバージョンに固定して配りたい場合は、`install.bat` の中の `REPO_URL` を `main` からコミットハッシュに書き換えてください。全台でまったく同じ内容が入ることを保証できます
+- 失敗した端末は**再実行するだけで復旧**します（導入済みはスキップされるため）
+- **WSL2 未導入の端末もセットアップは 1 回**で、最後に PC の再起動が必要です
+- 各端末のデスクトップに `ai-setup-log.txt` が残ります。回収すれば原因を特定できます
+- バージョンを固定して配りたい場合は、`install.bat` の `REPO_URL` を `main` からコミットハッシュへ変え、対象 `setup.ps1` の SHA-256 を `EXPECTED_SHA256` に設定します
 
 ```bat
 rem 例: 特定バージョンに固定する
 set "REPO_URL=https://raw.githubusercontent.com/kouki485/setup_ai/e410eff/windows/setup.ps1"
+set "EXPECTED_SHA256=対象ファイルのSHA-256"
 ```
 
-### GitHub にアクセスできない環境の場合
-
-`setup.ps1` と `wsl-setup.sh` を共有フォルダに置き、`install.bat` の `REPO_URL` を社内 URL に差し替えるか、ダウンロード部分を共有フォルダからのコピーに変更してください。その際 `setup.ps1` は **UTF-8 BOM 付き**のまま扱う必要があります（BOM が失われると文字化けして動きません）。
+GitHub にアクセスできない環境では、`setup.ps1` と `wsl-setup.sh` を共有フォルダに置き、`REPO_URL` を社内 URL に差し替えてください。その際 `setup.ps1` は **UTF-8 BOM 付きのまま**扱う必要があります（BOM が失われると文字化けして動きません）。
 
 ---
 
 ## ファイル構成
 
-OS ごとにディレクトリを分けています。自分の OS のフォルダだけ見れば足ります。
-
 ```
-windows/          Windows 用
+windows/
   install.bat       配布用の起動ファイル（ダブルクリックで実行）
   setup.ps1         セットアップ本体
+  setup-obsidian-mcp.ps1  Obsidian MCP を各 CLI に登録
   wsl-setup.sh      WSL / Ubuntu 内のセットアップ
 
-mac/              Mac 用
+mac/
   mac-setup.sh      セットアップ本体（Homebrew の導入を含む）
+  setup-obsidian-mcp.sh   Obsidian MCP を各 CLI に登録
 
-prompts/          OS 共通。業務改善用のプロンプト
+prompts/            OS 共通。業務改善用のプロンプト → prompts/README.md
   business-discovery.md   業務ヒアリング（深掘り）
   ax-proposal.md          AX 提案（AI 活用の設計）
 
-README.md         このファイル
-.gitattributes    文字コードと改行を保護する設定
+tests/
+  static-checks.sh  危険な実行パターン・文字コード・配布用SHA-256の回帰テスト
+
+.gitattributes      文字コードと改行を保護する設定
 ```
 
-| ファイル | 役割 |
-|---|---|
-| `windows/install.bat` | **Windows 配布用の起動ファイル。** 管理者昇格・ダウンロード・検証・実行を自動化 |
-| `windows/setup.ps1` | Windows 側のセットアップ本体（PowerShell スクリプト） |
-| `windows/wsl-setup.sh` | WSL / Ubuntu 側のセットアップ（シェルスクリプト） |
-| `mac/mac-setup.sh` | **macOS 用のセットアップ。** Homebrew の導入から一括で行う |
-| `prompts/business-discovery.md` | **業務ヒアリング用プロンプト。** Claude が業務を深掘りして業務プロファイルを作る |
-| `prompts/ax-proposal.md` | **AX 提案用プロンプト。** 業務プロファイルから AI 活用案を優先順位付きで出す |
-| `.gitattributes` | 文字コードと改行の設定を保護するための設定ファイル |
-
-`.gitattributes` は拡張子で判定しているため、ディレクトリを分けても設定はそのまま効きます（`*.ps1` は BOM + CRLF、`*.sh` は BOM なし + LF、`*.bat` は ASCII + CRLF を保持）。
-
 <details>
-<summary>.gitattributes は何をしているの？（技術的な補足）</summary>
+<summary>.gitattributes は何をしているか（技術的な補足）</summary>
 
-`setup.ps1` は **UTF-8 BOM 付き・CRLF 改行**で保存されています。Windows PowerShell 5.1 は BOM が無い UTF-8 ファイルを日本語環境の文字コード（CP932）として読んでしまい、日本語のコメントや文字列が壊れてしまうためです。
+`setup.ps1` は **UTF-8 BOM 付き・CRLF 改行**で保存されています。Windows PowerShell 5.1 は BOM が無い UTF-8 を日本語環境の文字コード（CP932）として読んでしまい、日本語のコメントや文字列が壊れるためです。
 
-一方 `wsl-setup.sh` は **BOM なし・LF 改行**です。bash は先頭の BOM を `#!` の一部と誤認してしまうためです。
+`wsl-setup.sh` は **BOM なし・LF 改行**です。bash は先頭の BOM を `#!` の一部と誤認するためです。`install.bat` は **ASCII・CRLF** で、日本語を含めません。
 
-git は既定でこれらを自動変換してしまうので、`.gitattributes` で `-text` を指定して変換を止めています。この設定があるおかげで、ダウンロードしたファイルがそのまま正しく動きます。
+git は既定でこれらを自動変換してしまうので、`.gitattributes` で `-text` を指定して変換を止めています。拡張子で判定しているため、ディレクトリを分けても設定はそのまま効きます。
 
 </details>
