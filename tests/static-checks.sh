@@ -66,4 +66,17 @@ if [ -z "$expected_hash" ] || [ "$expected_hash" != "$actual_hash" ]; then
     exit 1
 fi
 
+wsl_step_line="$(rg -n -m 1 '^Write-Step "WSL2 の状態を確認"\r?$' windows/setup.ps1 | cut -d: -f1)"
+git_step_line="$(rg -n -m 1 '^Write-Step "Git for Windows"\r?$' windows/setup.ps1 | cut -d: -f1)"
+result_step_line="$(rg -n -m 1 '^Write-Step "インストール結果"\r?$' windows/setup.ps1 | cut -d: -f1)"
+restart_prompt_line="$(rg -n -m 1 'Read-Host "今すぐ再起動しますか\? \(y/N\)"' windows/setup.ps1 | cut -d: -f1)"
+if [ "$wsl_step_line" -ge "$git_step_line" ] || [ "$restart_prompt_line" -le "$result_step_line" ]; then
+    echo "Windows の導入順が不正です（WSL後も続行し、検証後に再起動を案内する必要があります）" >&2
+    exit 1
+fi
+if sed -n "${wsl_step_line},${git_step_line}p" windows/setup.ps1 | rg -q '^[[:space:]]*exit 0\r?$'; then
+    echo "WSL 初回導入後に Windows 向けツールを入れず終了しています" >&2
+    exit 1
+fi
+
 echo "static checks: OK"

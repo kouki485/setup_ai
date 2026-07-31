@@ -18,13 +18,14 @@
 # 実行方法（通常のPowerShellで。WSL導入時だけUACを表示）:
 #   powershell -ExecutionPolicy Bypass -File .\setup.ps1
 #
-# WSL2が未導入の場合、インストール後に再起動を促します。
-# 再起動後にもう一度このスクリプトを実行すると残りが入ります。
+# WSL2が未導入の場合も Windows 向けツールの導入を続け、
+# 最後に再起動を促します。
 # 一部が失敗しても続行し、最後に結果一覧を表示します。
 # ============================================================
 
 $ErrorActionPreference = "Continue"
 $script:Failed = @()
+$script:RestartRequired = $false
 $VercelNativeVersion = "58.4.0"
 if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
     Write-Host "このスクリプトは Windows 専用です。" -ForegroundColor Red
@@ -268,24 +269,9 @@ if (-not $wsl2Supported) {
         Write-Fail "WSL2 のインストールに失敗しました (exit=$wslInstallExitCode)"
         Add-Failure "WSL2"
     } else {
-        Write-Host ""
-        Write-Host "============================================================" -ForegroundColor Yellow
-        Write-Host " WSL2のインストールが完了しました。PCの再起動が必要です。" -ForegroundColor Yellow
-        Write-Host " 再起動後:" -ForegroundColor Yellow
-        Write-Host "   1. スタートメニューから Ubuntu を開き、初期設定（ユーザー名/パスワード）" -ForegroundColor Yellow
-        Write-Host "   2. このスクリプトをもう一度実行して残りをインストール" -ForegroundColor Yellow
-        Write-Host "============================================================" -ForegroundColor Yellow
-        $answer = Read-Host "今すぐ再起動しますか? (y/N)"
-        if ($answer -eq "y") {
-            try {
-                Start-Process -FilePath "$env:SystemRoot\System32\shutdown.exe" `
-                    -ArgumentList @("/r", "/t", "0") -Verb RunAs -ErrorAction Stop
-            } catch {
-                Write-Fail "再起動を開始できませんでした。スタートメニューから手動で再起動してください。"
-            }
-        }
-        try { Stop-Transcript | Out-Null } catch { }
-        exit 0
+        $script:RestartRequired = $true
+        Write-Ok "WSL2 と Ubuntu をインストールしました"
+        Write-Host "  Windows 向けツールの導入を続け、最後に再起動を案内します。" -ForegroundColor Yellow
     }
 }
 
@@ -603,6 +589,25 @@ Write-Host "============================================================" -Foreg
 Write-Host ""
 Write-Host " 実行ログ: $script:LogPath" -ForegroundColor DarkGray
 Write-Host " うまくいかない場合はこのファイルを管理者に送ってください。" -ForegroundColor DarkGray
+
+if ($script:RestartRequired) {
+    Write-Host ""
+    Write-Host "============================================================" -ForegroundColor Yellow
+    Write-Host " WSL2のインストールを反映するため、PCの再起動が必要です。" -ForegroundColor Yellow
+    Write-Host " 再起動後、スタートメニューから Ubuntu を開き、" -ForegroundColor Yellow
+    Write-Host " ユーザー名とパスワードを設定してください。" -ForegroundColor Yellow
+    Write-Host " Windows 向けツールは導入済みなので、このスクリプトの再実行は不要です。" -ForegroundColor Yellow
+    Write-Host "============================================================" -ForegroundColor Yellow
+    $answer = Read-Host "今すぐ再起動しますか? (y/N)"
+    if ($answer -eq "y") {
+        try {
+            Start-Process -FilePath "$env:SystemRoot\System32\shutdown.exe" `
+                -ArgumentList @("/r", "/t", "0") -Verb RunAs -ErrorAction Stop
+        } catch {
+            Write-Fail "再起動を開始できませんでした。スタートメニューから手動で再起動してください。"
+        }
+    }
+}
 
 try { Stop-Transcript | Out-Null } catch { }
 if ($script:Failed.Count -gt 0) { exit 1 }

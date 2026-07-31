@@ -84,16 +84,14 @@ curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouk
 
 </details>
 
-### WSL2 が未導入の PC は 2 回実行します
+### WSL2 が未導入の PC は最後に再起動します
 
 ```
-1 回目を実行 → WSL2 が入り、再起動を求められて終了
-再起動      → スタートメニューから「Ubuntu」を開き、ユーザー名とパスワードを決める（必須）
-2 回目を実行 → 残り（Git / Node.js / GitHub CLI / Supabase CLI / Vercel CLI /
-              Claude Code / Codex CLI / Claude Desktop）が入る
+1 回実行 → WSL2 と Windows 向けツールがすべて入り、最後に再起動を求められる
+再起動   → スタートメニューから「Ubuntu」を開き、ユーザー名とパスワードを決める（必須）
 ```
 
-パスワードは入力しても画面に何も表示されませんが、ちゃんと入力されています。WSL2 が既に入っている PC なら 1 回で終わります。
+パスワードは入力しても画面に何も表示されませんが、ちゃんと入力されています。Windows 向けツールを入れるためにセットアップを 2 回実行する必要はありません。
 
 ### 終わったらログイン
 
@@ -182,7 +180,7 @@ source ~/.bashrc
 
 ```powershell
 (Get-FileHash "$env:TEMP\setup.ps1" -Algorithm SHA256).Hash
-# 1eeddd413cc688c1f927bd79ab3c32e5479ee048748b555525ed98e8897a4403
+# 1a0cf414710c79daba01c969e56c7e22f461b788494285f1f28f785c4b98b781
 ```
 
 一致しないファイルは実行せず削除してください。通常は `install.bat` がこの確認を自動で行います。
@@ -207,7 +205,7 @@ source ~/.bashrc
 | 各利用者の **AI サービス契約**があるか | ツールは入ってもログインできません |
 
 - 失敗した端末は**再実行するだけで復旧**します（導入済みはスキップされるため）
-- **WSL2 未導入の端末は 2 回実行**が必要です
+- **WSL2 未導入の端末もセットアップは 1 回**で、最後に PC の再起動が必要です
 - 各端末のデスクトップに `ai-setup-log.txt` が残ります。回収すれば原因を特定できます
 - バージョンを固定して配りたい場合は、`install.bat` の `REPO_URL` を `main` からコミットハッシュへ変え、対象 `setup.ps1` の SHA-256 を `EXPECTED_SHA256` に設定します
 
