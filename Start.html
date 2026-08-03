@@ -99,18 +99,22 @@
           Apple のセキュリティ（Gatekeeper）の仕様です。下の方法で進めてください。
         </div>
 
-        <h2>おすすめ: ターミナルに貼り付け</h2>
+        <h2>おすすめ: ターミナルに 1 行貼り付け</h2>
+        <p>ZIP を使わず、Homebrew と同じ入れ方です。Gatekeeper の警告は出ません。</p>
         <ol>
           <li>Launchpad →「その他」→「ターミナル」を開く</li>
           <li>下の「コマンドをコピー」を押す</li>
           <li>ターミナルに貼り付けて Enter</li>
         </ol>
-        <pre id="mac-cmd">DIR=$(find "$HOME/Downloads" "$HOME/Desktop" "$HOME/Documents" -maxdepth 4 -type d -name 'AI-Dev-Setup' 2>/dev/null | head -n1); if [ -z "$DIR" ]; then echo "AI-Dev-Setup フォルダが見つかりません。ZIP を展開した場所を確認してください。"; else cd "$DIR" && xattr -dr com.apple.quarantine . && bash mac/mac-setup.sh; fi</pre>
+        <pre id="mac-cmd">curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.1/mac/mac-setup.sh -o /tmp/ai-mac-setup.sh &amp;&amp; bash /tmp/ai-mac-setup.sh</pre>
         <div class="actions">
           <button class="primary" type="button" onclick="copyText('mac-cmd')">コマンドをコピー</button>
-          <button class="secondary" type="button" onclick="copyText('mac-cmd-drag')">フォルダを自分で選ぶコマンドをコピー</button>
         </div>
-        <pre id="mac-cmd-drag" hidden>echo "次に表示される画面で、展開済みの AI-Dev-Setup フォルダを選んでください"; DIR=$(osascript -e 'POSIX path of (choose folder with prompt "展開した AI-Dev-Setup フォルダを選んでください")' | sed 's:/$::'); cd "$DIR" && xattr -dr com.apple.quarantine . && bash mac/mac-setup.sh</pre>
+        <p class="muted">ZIP 内のスクリプトを使いたい場合だけ:</p>
+        <pre id="mac-cmd-local">DIR=$(find "$HOME/Downloads" "$HOME/Desktop" "$HOME/Documents" -maxdepth 4 -type d -name 'AI-Dev-Setup' 2>/dev/null | head -n1); if [ -z "$DIR" ]; then echo "AI-Dev-Setup フォルダが見つかりません"; else cd "$DIR" &amp;&amp; xattr -dr com.apple.quarantine . &amp;&amp; bash mac/mac-setup.sh; fi</pre>
+        <div class="actions">
+          <button class="secondary" type="button" onclick="copyText('mac-cmd-local')">ZIP展開済みフォルダ向けコマンドをコピー</button>
+        </div>
         <p id="toast">コピーしました。ターミナルに貼り付けて Enter を押してください。</p>
 
         <h2>別の方法</h2>

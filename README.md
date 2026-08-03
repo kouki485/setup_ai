@@ -2,7 +2,30 @@
 
 Windows / Mac に、Claude を使った開発環境をまとめて導入します。
 
-[**セットアップ ZIP をダウンロード**](https://github.com/kouki485/setup_ai/releases/latest/download/AI-Dev-Setup.zip)
+## Mac（いちばんかんたん）
+
+ターミナル（Launchpad → その他 → ターミナル）を開き、次の **1 行** を貼り付けて Enter してください。
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.1/mac/mac-setup.sh -o /tmp/ai-mac-setup.sh && bash /tmp/ai-mac-setup.sh
+```
+
+Gatekeeper の警告は出ません（Homebrew と同じ入れ方です）。  
+終わったら新しいターミナルを開き、`claude` でログインしてください。
+
+> `Start_Mac.command` のダブルクリックが止まるのは Apple の仕様です。警告なしのダブルクリックにするには Apple Developer の署名・公証が必要です。
+
+## Windows（いちばんかんたん）
+
+PowerShell で次を実行するか、下の ZIP を使ってください。
+
+```powershell
+curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.1/windows/install.bat
+& "$env:TEMP\install.bat"
+```
+
+または [**AI-Dev-Setup.zip**](https://github.com/kouki485/setup_ai/releases/latest/download/AI-Dev-Setup.zip) を展開して `Start_Windows.bat` をダブルクリック。  
+SmartScreen が出たら「詳細情報」→「実行」。WSL の UAC は「はい」。
 
 ## 入るもの
 
@@ -16,63 +39,33 @@ Windows / Mac に、Claude を使った開発環境をまとめて導入しま�
 
 `claude` などをコマンド名だけで実行できるよう、PATH も設定します。
 
-## セットアップ手順
+## ZIP で入れたい場合
 
-1. [**AI-Dev-Setup.zip をダウンロード**](https://github.com/kouki485/setup_ai/releases/latest/download/AI-Dev-Setup.zip)
-2. ZIP をフォルダごと展開する
-3. **`Start.html` をダブルクリック**（ブラウザで開きます）
-4. 画面の案内に従う
-5. 終わったら新しいターミナルで `claude` と入力してログインする
+[**AI-Dev-Setup.zip をダウンロード**](https://github.com/kouki485/setup_ai/releases/latest/download/AI-Dev-Setup.zip)
 
-> Mac で `Start_Mac.command` をダブルクリックすると「検証できません」で止まることがあります（Apple の仕様）。そのときは **`Start.html` を開く**か、`Start_Mac.command` を右クリック →「開く」で進めてください。
+1. フォルダごと展開
+2. **`Start.html` を開く**（案内どおりに進む）
+3. 完了後、新しいターミナルで `claude` ログイン
 
+Mac で `Start_Mac.command` をダブルクリックして止まっても、`Start.html` か上の 1 行コマンドを使えば進められます。
 
-### Mac で警告が出る場合
-
-「Appleは悪質なソフトウェアが含まれていないことを検証できませんでした」と表示されたら、次の順に操作します。
-
-1. 警告画面で「完了」を押す
-2. **システム設定 → プライバシーとセキュリティ**を開く
-3. 下へスクロールして**このまま開く**を押す
-4. 確認画面で**開く**を押す
-
-初回のみ必要です。警告なしで配布するには、Apple Developer ID による署名とノータリゼーションが必要です。
-
-## コマンドから実行する場合
-
-Windows:
-
-```powershell
-curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouki485/setup_claude/main/windows/install.bat
-& "$env:TEMP\install.bat"
-```
-
-Mac:
+## WSL / Ubuntu の中にも入れる場合
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_claude/main/mac/mac-setup.sh -o mac-setup.sh
-bash mac-setup.sh
-```
-
-WSL / Ubuntu 内にも CLI を入れる場合:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_claude/main/windows/wsl-setup.sh -o wsl-setup.sh
-bash wsl-setup.sh
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.1/windows/wsl-setup.sh -o /tmp/ai-wsl-setup.sh && bash /tmp/ai-wsl-setup.sh
 source ~/.bashrc
 ```
 
 ## 動作条件と注意
 
-- Windows 10 1809 以降、macOS 13 以降、Ubuntu 20.04 以降に対応
-- WSL2 は Windows 10 ビルド 19041 以降で導入
+- Windows 10 1809 以降、macOS 13 以降、Ubuntu 20.04 以降
 - Mac では Homebrew 導入時にログインパスワードが必要
-- Windows で WSL2 を初めて入れた場合は、完了後に再起動が必要
-- Windows Arm64 では Vercel CLI のネイティブ版は導入対象外
-- Claude Code の利用には対応する Claude プランまたは API 契約が必要
-- 実行ログはデスクトップの `ai-setup-log.txt` に保存
+- Windows で WSL2 を初めて入れた場合は再起動が必要
+- Windows Arm64 では Vercel CLI のネイティブ版は対象外
+- Claude Code の利用には対応プランまたは API 契約が必要
+- 実行ログはデスクトップの `ai-setup-log.txt`
 
-失敗した場合は、ネットワークを確認して同じファイルを再実行してください。導入済みの項目はスキップされます。
+失敗したら同じコマンドをもう一度実行してください（導入済みはスキップされます）。
 
 ## 配布 ZIP の更新
 
