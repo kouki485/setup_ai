@@ -7,7 +7,7 @@ Windows / Mac に、Claude を使った開発環境をまとめて導入しま�
 ターミナル（Launchpad → その他 → ターミナル）を開き、次の **1 行** を貼り付けて Enter してください。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.1/mac/mac-setup.sh -o /tmp/ai-mac-setup.sh && bash /tmp/ai-mac-setup.sh
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.2/mac/mac-setup.sh -o /tmp/ai-mac-setup.sh && bash /tmp/ai-mac-setup.sh
 ```
 
 Gatekeeper の警告は出ません（Homebrew と同じ入れ方です）。  
@@ -20,7 +20,7 @@ Gatekeeper の警告は出ません（Homebrew と同じ入れ方です）。
 PowerShell で次を実行するか、下の ZIP を使ってください。
 
 ```powershell
-curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.1/windows/install.bat
+curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.2/windows/install.bat
 & "$env:TEMP\install.bat"
 ```
 
@@ -52,7 +52,7 @@ Mac で `Start_Mac.command` をダブルクリックして止まっても、`Sta
 ## WSL / Ubuntu の中にも入れる場合
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.1/windows/wsl-setup.sh -o /tmp/ai-wsl-setup.sh && bash /tmp/ai-wsl-setup.sh
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.2/windows/wsl-setup.sh -o /tmp/ai-wsl-setup.sh && bash /tmp/ai-wsl-setup.sh
 source ~/.bashrc
 ```
 

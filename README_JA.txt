@@ -5,7 +5,7 @@
 【Mac いちばんかんたん】
 ターミナルを開いて、次の1行を貼り付けて Enter:
 
-curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.1/mac/mac-setup.sh -o /tmp/ai-mac-setup.sh && bash /tmp/ai-mac-setup.sh
+curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/v2.0.2/mac/mac-setup.sh -o /tmp/ai-mac-setup.sh && bash /tmp/ai-mac-setup.sh
 
 ※ Start_Mac.command のダブルクリックが止まるのは Apple の仕様です。
   上の1行なら警告は出ません。
