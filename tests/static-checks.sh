@@ -21,8 +21,17 @@ if ! rg -q 'mac/mac-setup\.sh' Start_Mac.command; then
     echo "Start_Mac.command が同梱の mac-setup.sh を参照していません" >&2
     exit 1
 fi
+if rg -q 'com\.apple\.quarantine' Start_Mac.command; then
+    echo "Start_Mac.command が Gatekeeper の隔離属性を削除しています" >&2
+    exit 1
+fi
 if [ ! -f README_JA.txt ]; then
     echo "README_JA.txt がありません" >&2
+    exit 1
+fi
+if ! rg -q 'プライバシーとセキュリティ' README_JA.txt \
+    || ! rg -q 'このまま開く' README_JA.txt; then
+    echo "README_JA.txt に macOS の現行 Gatekeeper 解除手順がありません" >&2
     exit 1
 fi
 if [ ! -x scripts/build-dist.sh ]; then

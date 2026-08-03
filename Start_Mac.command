@@ -24,12 +24,6 @@ if [ ! -f "$SETUP" ]; then
     exit 1
 fi
 
-# ダウンロード属性（隔離）が付いていると macOS が実行を止めることがある。
-# 利用者が「開く」を選べるよう、このフォルダ内の隔離属性だけ外す。
-if command -v xattr >/dev/null 2>&1; then
-    xattr -dr com.apple.quarantine "$ROOT" 2>/dev/null || true
-fi
-
 chmod +x "$SETUP" 2>/dev/null || true
 bash "$SETUP"
 EXIT_CODE=$?
