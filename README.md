@@ -1,17 +1,26 @@
 # AI 開発環境 セットアップスクリプト（Windows / Mac）
 
-新品の Windows または Mac に、AI でコードを書くための道具をまとめて入れます。手作業で 30 分以上かかる作業が、コマンド 2 行で終わります。
+新品の Windows または Mac に、AI でコードを書くための道具をまとめて入れます。ZIP をダウンロードして展開し、スタート用ファイルをダブルクリックするだけで始められます。
 
 > **インストールが終わったら** → [自分の業務を AI に手伝わせる](prompts/README.md)
+
+## ダウンロード（いちばんかんたん）
+
+[**AI-Dev-Setup.zip をダウンロード**](https://github.com/kouki485/setup_ai/releases/latest/download/AI-Dev-Setup.zip)
+
+1. ZIP をフォルダごと展開する
+2. Windows なら `Start_Windows.bat`、Mac なら `Start_Mac.command` をダブルクリック
+3. 終わったら新しいターミナルで `claude` と入力してログイン
+
+詳しい注意点は展開後の `README_JA.txt` にも書いてあります。
+
+---
 
 ## 何が入るか
 
 | | Windows | Mac |
 |---|:---:|:---:|
 | **Claude Code** — ターミナルで動く AI コーディング支援（Anthropic 製） | ○ | ○ |
-| **Codex CLI** — 同上（OpenAI 製） | ○ | ○ |
-| **Hermes Agent** — 自律型 AI エージェント（Nous Research 製・任意選択） | 選択可 | 選択可 |
-| **Obsidian + MCP** — ノートを AI から操作（任意選択） | 選択可 | 選択可 |
 | **Claude Desktop** — 画面から使うデスクトップアプリ | ○ | ○ |
 | **Git** — 変更履歴を管理する道具 | ○ | ○ |
 | **Node.js (LTS)** — JavaScript の実行環境（npm 配布 CLI の導入に使用） | ○ | ○ |
@@ -25,14 +34,12 @@
 
 ## 安全性
 
-- Windows の `install.bat` は、取得した `setup.ps1` の SHA-256 が同梱値と一致した場合だけ実行します
+- 配布 ZIP には `Start_Windows.bat` / `Start_Mac.command` と同梱スクリプトが入っており、展開後にそのまま実行できます
+- 単体配布の Windows `install.bat` は、取得した `setup.ps1` の SHA-256 が同梱値と一致した場合だけ実行します
 - Windows / WSL では Supabase CLI の配布元を公式 GitHub Release に限定し、SHA-256 を照合します
 - WSL では Node.js / GitHub CLI / Claude Code の署名鍵を照合します
 - Vercel CLI は既知の脆弱な依存ツリーを持つ Node.js 版を避け、`npm audit` で既知脆弱性 0 件を確認した公式ネイティブ版 58.4.0 を固定して導入します
 - npm 経由の導入ではパッケージのライフサイクルスクリプトを実行しません
-- Hermes Agent の公式インストーラは一旦ファイルへ保存し、構文確認後に別プロセスで実行します（`curl | bash` や `irm | iex` は使いません）
-- Obsidian MCP は、余分な npm 製プロキシを追加せず「Local REST API with MCP」プラグイン内蔵サーバーを使います
-- Obsidian MCP の設定ヘルパーは SHA-256 と構文を検証してから配置し、API Key を Git や通常の MCP 設定へ直書きしません
 - Windows 全体を管理者として実行せず、WSL の導入・更新操作だけ UAC で昇格します
 
 スクリプトは多数の開発ツールをインストールし、PATH やパッケージリポジトリを変更します。配布元と内容を確認できるこのリポジトリから取得してください。
@@ -52,31 +59,46 @@ Windows 10 ビルド 19041（バージョン 2004）未満では WSL2 だけが�
 
 Vercel の Windows ネイティブ版は現在 x64 のみです。Windows Arm64 では Vercel CLI だけ `[NG]` になりますが、WSL の Arm64 版は利用できます。
 
-契約は Claude Code / Claude Desktop なら **Claude Pro** または **Max**、Codex CLI なら **ChatGPT Plus** などが必要です。
-
-Hermes Agent は途中の質問で `y` を選んだ場合だけ入ります（既定値は `N`）。導入後は Nous Portal、OpenRouter、OpenAI など利用するモデル提供元の設定が別途必要です。
-
-Obsidian MCP も途中の質問で `y` を選んだ場合だけ入ります（既定値は `N`）。Obsidian のインストール後、利用する保管庫（Vault）ごとにコミュニティプラグインを有効化する手順が必要です。
+契約は Claude Code / Claude Desktop なら **Claude Pro** または **Max** などが必要です。
 
 winget は Microsoft Store の「アプリ インストーラー」に含まれます。通常 Windows 10/11 には最初から入っていますが、古いと動かないことがあります。
 
 ---
 
-## Windows で入れる
+## いちばんかんたん（Windows / Mac 共通・おすすめ）
 
-### かんたん版（おすすめ）
+1. 配布 ZIP（`AI-Dev-Setup.zip`）をダウンロードする
+2. ZIP を**フォルダごと**展開する
+3. 展開したフォルダ内の `README_JA.txt` を読む
+4. OS に応じてダブルクリックする
+   - Windows: `Start_Windows.bat`
+   - Mac: `Start_Mac.command`
+5. 終わったら**新しいターミナル**を開き、`claude` でログインする
+
+ZIP にはセットアップ本体が同梱されているので、起動時に GitHub から取り直す必要はありません。実行ログはデスクトップの `ai-setup-log.txt` に残ります。
+
+> **Windows**: Defender / SmartScreen の警告が出たら「詳細情報」→「実行」。WSL2 の導入時だけ UAC で「はい」。
+>
+> **Mac**: 「開発元を確認できない」と出たらファイルを右クリック →「開く」→「開く」。Homebrew 導入時だけパスワードを聞かれます。
+
+配布 ZIP の作り方（管理者向け）:
+
+```bash
+bash scripts/build-dist.sh
+# → dist/AI-Dev-Setup.zip
+```
+
+---
+
+## Windows で入れる（単体ファイル版）
+
+ZIP が使えない環境向けです。`install.bat` だけを配り、実行時に本体を取得・検証します。
 
 1. [install.bat をダウンロード](https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/install.bat)（右クリック →「名前を付けてリンク先を保存」）
 2. ダウンロードした `install.bat` を**ダブルクリック**
 3. WSL2 の導入・更新で UAC が表示された場合だけ「はい」
 
-本体のダウンロード、SHA-256 検証、実行まで自動で進みます。終わるとデスクトップに `ai-setup-log.txt` が残ります。うまくいかなかったときは、このファイルを担当者に送ってください。
-
-> Windows Defender や SmartScreen の警告が出たら「詳細情報」→「実行」。インターネットから入手したバッチファイルには必ず出ます。
-
 ### コマンド版
-
-通常の PowerShell で次の 2 行を実行します。取得した `install.bat` が、セットアップ本体の SHA-256 を検証してから実行します。
 
 ```powershell
 curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/install.bat
@@ -108,19 +130,15 @@ curl.exe -fsSL -o "$env:TEMP\install.bat" https://raw.githubusercontent.com/kouk
 
 ```powershell
 claude      # ブラウザが開くので Claude アカウントでログイン
-codex       # ブラウザが開くので ChatGPT アカウントでログイン
-hermes setup           # Hermes Agent を選んだ場合。利用するモデル提供元を選択
-# Nous Portal を使う場合は: hermes setup --portal
-setup-obsidian-mcp     # Obsidian MCP を選び、下記のプラグイン設定を終えた場合
 ```
 
 Claude Desktop はスタートメニューから起動してサインインします。
 
 ---
 
-## Mac で入れる
+## Mac で入れる（コマンド版）
 
-`install.bat` や `setup.ps1` は Windows 専用です。Mac ではターミナル（アプリケーション → ユーティリティ → ターミナル）で次の 2 行を実行します。
+おすすめは上の ZIP 配布です。ターミナルから直接入れたい場合だけ、次の 2 行を実行します。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kouki485/setup_ai/main/mac/mac-setup.sh -o mac-setup.sh
@@ -131,10 +149,6 @@ bash mac-setup.sh
 
 ```bash
 claude      # ブラウザが開くので Claude アカウントでログイン
-codex       # ブラウザが開くので ChatGPT アカウントでログイン
-hermes setup           # Hermes Agent を選んだ場合。利用するモデル提供元を選択
-# Nous Portal を使う場合は: hermes setup --portal
-setup-obsidian-mcp     # Obsidian MCP を選び、下記のプラグイン設定を終えた場合
 ```
 
 Claude Desktop は Launchpad から起動してサインインします。実行ログはデスクトップの `ai-setup-log.txt` に残ります。
@@ -158,34 +172,7 @@ Homebrew の導入時だけ、Mac のログインパスワードを求められ�
 
 ---
 
-## Obsidian MCP を使う（任意）
-
-このセットアップでは、別プロセスの非公式 `obsidian-mcp` npm パッケージではなく、Obsidian コミュニティで配布されている [Local REST API with MCP](https://community.obsidian.md/plugins/obsidian-local-rest-api) の内蔵 Streamable HTTP MCP サーバーを使います。
-
-導入順は変えないでください。
-
-1. メインセットアップの「Obsidian MCP をインストールしますか？」で `y`
-2. Obsidian を起動し、既存の Vault を開くか新規作成
-3. 「設定 → コミュニティプラグイン」から **Local REST API with MCP** を導入して有効化
-4. 「設定 → Local REST API」で **Enable HTTP server** を有効化
-5. **Binding Host が `127.0.0.1`、Authorization header が `Authorization` のまま**であることを確認
-6. 表示された API Key をコピー
-7. 新しいターミナルで `setup-obsidian-mcp` を実行し、API Key を入力
-
-設定ヘルパーは、書き込み前にローカルAPIへ実際に接続して API Key を検証し、Claude Code / Codex CLI / 導入済みの Hermes Agent へ `obsidian` を登録します。既存の同名設定がある場合は、勝手に上書きせず確認します。
-
-```bash
-claude mcp get obsidian
-codex mcp get obsidian
-hermes mcp test obsidian   # Hermes Agent を導入した場合
-```
-
-> **重要**: この MCP にはノートの読み書き・削除や Obsidian コマンド実行機能があります。Vault のバックアップを取り、AI の変更内容を確認してください。API Key は共有・Git commit せず、Binding Host を `0.0.0.0` や LAN のアドレスへ変更しないでください。
-
-全クライアントで自己署名証明書を信頼させる操作を避けるため、設定ヘルパーはプラグインの HTTP ポート `127.0.0.1:27123` を使います。通信はループバック内だけですが暗号化されません。Mac のキーは `~/.config/setup-ai/obsidian-mcp.env`（権限 600）、Windows のキーはユーザー環境変数へ保存され、各 MCP 設定から環境変数として参照されます。
-
-Claude Desktop はリモート HTTP MCP を直接扱えないため自動設定しません。第三者製の `mcp-remote` ブリッジを自動実行することもありません。
-
+## WSL / Ubuntu
 ---
 
 ## WSL / Ubuntu の中にも入れる
@@ -198,11 +185,9 @@ bash wsl-setup.sh
 source ~/.bashrc
 ```
 
-基本パッケージ（`git` / `curl` / `unzip` / `build-essential` など）に加えて、Node.js LTS / GitHub CLI / Supabase CLI / Vercel CLI と、Claude Code / Codex CLI の Linux 版が入ります。途中で `y` を選ぶと Hermes Agent も追加されます。終わったら `claude` / `codex`、Hermes を選んだ場合は `hermes setup`（Nous Portal なら `hermes setup --portal`）で初期設定してください。
+基本パッケージ（`git` / `curl` / `unzip` / `build-essential` など）に加えて、Node.js LTS / GitHub CLI / Supabase CLI / Vercel CLI と Claude Code の Linux 版が入ります。終わったら `claude` でログインしてください。
 
 > **ヒント**: WSL で作業するときは、ファイルを `/mnt/c/...`（Windows 側のフォルダ）ではなく `~/`（Ubuntu の中）に置いてください。読み書きの速度がはっきり変わります。
->
-> Obsidian は Windows 側の GUI アプリとして動き、WSL2 から Windows のループバックへ到達できるかはネットワークモードで異なります。このため Obsidian MCP は Windows 側の Claude / Codex / Hermes にだけ自動設定します。
 
 ---
 
@@ -214,10 +199,6 @@ source ~/.bashrc
 |---|---|
 | `claude` コマンドが見つからない | ターミナルを開き直してください。PATH の変更は新しく開いたターミナルにしか反映されません |
 | `npm` / `vercel` / `supabase` コマンドが見つからない | 同上。ターミナルを開き直しても見つからない場合は、結果一覧で `[NG]` になっていないか確認して再実行してください |
-| `hermes` コマンドが見つからない | セットアップ中の質問で `y` を選んだか確認してください。選択済みならターミナルを開き直し、それでも見つからなければ再実行してください |
-| `setup-obsidian-mcp` が見つからない | Obsidian MCP の質問で `y` を選んだか確認し、新しいターミナルを開いてください |
-| Obsidian MCP に接続できない | Obsidian を起動し、対象 Vault で Local REST API with MCP と Enable HTTP server の両方が有効か確認してください |
-| Obsidian MCP の API Key が拒否される | Local REST API の設定画面に現在表示されている API Key をコピーし直し、Authorization header が既定値か確認してください |
 | 「この Windows（ビルド …）は非対応です」と出て止まる | Windows Update で更新してから再実行してください（Windows 10 1809 以上が必要） |
 | 「式またはステートメントのトークン '}' を使用できません」等のエラーが大量に出る | 文字化けです。`irm` ではなく **`curl.exe`** でダウンロードし直してください |
 | WSL2 導入時の UAC をキャンセルした | 他のツールの処理は続きます。再実行して UAC を承認するか、IT 部門に WSL2 の導入を依頼してください |
@@ -231,7 +212,7 @@ source ~/.bashrc
 
 ```powershell
 (Get-FileHash "$env:TEMP\setup.ps1" -Algorithm SHA256).Hash
-# a112ef09ea4262a2e1694327d679e944bef189ed7fddad008c9b09e3845083c1
+# 69eb2557699f14c39a783fa9616f8ddf0e4684880e7af0db58279bbae56ea0c5
 ```
 
 一致しないファイルは実行せず削除してください。通常は `install.bat` がこの確認を自動で行います。
@@ -242,7 +223,7 @@ source ~/.bashrc
 
 ## 管理者・IT 担当者向け（複数台に配る場合）
 
-**`install.bat` だけを配れば十分です。** セットアップ本体は実行時に GitHub から取得され、同梱の SHA-256 と一致した場合だけ動きます。共有フォルダ、Slack、Teams、メール添付など普段の経路で構いません。利用者への案内は「ダウンロードしてダブルクリック。WSL の UAC が出た場合だけ『はい』」で足ります。
+**おすすめは `AI-Dev-Setup.zip` を配ることです。** `bash scripts/build-dist.sh` で作れます。利用者への案内は「ZIP を展開して `Start_Windows.bat`（Windows）または `Start_Mac.command`（Mac）をダブルクリック。WSL の UAC が出たら『はい』」で足ります。ZIP が使えない場合だけ `install.bat` を単体配布してください（実行時に本体を取得し、SHA-256 一致時のみ動きます）。
 
 配布前に確認しておくこと:
 
@@ -251,9 +232,7 @@ source ~/.bashrc
 | **Windows 10 1809（ビルド 17763）以降**か | OS バージョン確認で中断します（1803 以前は `curl.exe` が無く `install.bat` の時点で停止します） |
 | **ビルド 19041 以降**か | WSL2 だけがスキップされ、他のツールは導入されます |
 | 各 PC で **UAC を承認できるか** | WSL2 の導入・更新ができません。IT 側で WSL を先に入れておくこともできます |
-| **winget** が使えるか | Git / Node.js / GitHub CLI / Claude Desktop / 選択した Obsidian がスキップされ、AI CLI の直接導入だけ続きます |
-| Hermes Agent を利用するか | 利用者がセットアップ中に選択します。既定では導入しません |
-| Obsidian MCP を利用するか | 利用者がセットアップ中に選択します。既定では導入せず、選択後も Vault 内でプラグインの有効化が必要です |
+| **winget** が使えるか | Git / Node.js / GitHub CLI / Claude Desktop がスキップされ、AI CLI の直接導入だけ続きます |
 | プロキシや**セキュリティ製品**が通信を書き換えないか | 改変を検知して安全に停止します |
 | 各利用者の **AI サービス契約**があるか | ツールは入ってもログインできません |
 
@@ -275,15 +254,20 @@ GitHub にアクセスできない環境では、`setup.ps1` と `wsl-setup.sh` 
 ## ファイル構成
 
 ```
+Start_Windows.bat   ZIP展開後の Windows 起動ファイル（ダブルクリック）
+Start_Mac.command   ZIP展開後の Mac 起動ファイル（ダブルクリック）
+README_JA.txt       利用者向けの短い説明
+
 windows/
-  install.bat       配布用の起動ファイル（ダブルクリックで実行）
+  install.bat       単体配布用の起動ファイル（GitHub から本体を取得）
   setup.ps1         セットアップ本体
-  setup-obsidian-mcp.ps1  Obsidian MCP を各 CLI に登録
   wsl-setup.sh      WSL / Ubuntu 内のセットアップ
 
 mac/
   mac-setup.sh      セットアップ本体（Homebrew の導入を含む）
-  setup-obsidian-mcp.sh   Obsidian MCP を各 CLI に登録
+
+scripts/
+  build-dist.sh     配布 ZIP（dist/AI-Dev-Setup.zip）を作る
 
 prompts/            OS 共通。業務改善用のプロンプト → prompts/README.md
   business-discovery.md   業務ヒアリング（深掘り）

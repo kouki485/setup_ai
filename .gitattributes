@@ -7,3 +7,4 @@
 *.ps1 -text whitespace=cr-at-eol
 *.bat -text whitespace=cr-at-eol
 *.sh  -text
+*.command -text

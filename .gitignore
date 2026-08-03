@@ -5,3 +5,7 @@
 
 # セットアップスクリプトがデスクトップに出力する実行ログ
 ai-setup-log.txt
+
+# 配布用 ZIP の生成先（完成 ZIP だけリポジトリに載せて README から配る）
+dist/*
+!dist/AI-Dev-Setup.zip

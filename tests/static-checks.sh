@@ -6,8 +6,29 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 bash -n mac/mac-setup.sh
-bash -n mac/setup-obsidian-mcp.sh
 bash -n windows/wsl-setup.sh
+bash -n Start_Mac.command
+
+if ! perl -0777 -e '$d = <>; exit(($d !~ /[^\x00-\x7f]/ && $d !~ /(?<!\r)\n/) ? 0 : 1)' Start_Windows.bat; then
+    echo "Start_Windows.bat は ASCII・CRLF ではありません" >&2
+    exit 1
+fi
+if ! rg -q 'windows\\setup\.ps1' Start_Windows.bat; then
+    echo "Start_Windows.bat が同梱の setup.ps1 を参照していません" >&2
+    exit 1
+fi
+if ! rg -q 'mac/mac-setup\.sh' Start_Mac.command; then
+    echo "Start_Mac.command が同梱の mac-setup.sh を参照していません" >&2
+    exit 1
+fi
+if [ ! -f README_JA.txt ]; then
+    echo "README_JA.txt がありません" >&2
+    exit 1
+fi
+if [ ! -x scripts/build-dist.sh ]; then
+    echo "scripts/build-dist.sh が実行可能ではありません" >&2
+    exit 1
+fi
 
 if rg -n \
     '(?i)invoke-expression|\[scriptblock\]::create|curl[^\n]*\|[^\n]*(bash|sh)|/tmp/(supabase|githubcli)|get\.scoop\.sh' \
@@ -43,108 +64,21 @@ if rg -n 'npm[^\n]*install' mac windows | rg -v -- '--ignore-scripts'; then
     exit 1
 fi
 
-for script in mac/mac-setup.sh windows/wsl-setup.sh; do
-    if ! rg -q 'https://hermes-agent\.nousresearch\.com/install\.sh' "$script" \
-        || ! rg -q 'bash -n "\$HERMES_INSTALLER"' "$script" \
-        || ! rg -q -- '--skip-setup --non-interactive' "$script"; then
-        echo "$script の Hermes Agent 任意導入が安全な公式手順になっていません" >&2
-        exit 1
-    fi
-done
-if ! rg -q 'https://hermes-agent\.nousresearch\.com/install\.ps1' windows/setup.ps1 \
-    || ! rg -q '"hermes" @\("-SkipSetup", "-NonInteractive"\)' windows/setup.ps1; then
-    echo "windows/setup.ps1 の Hermes Agent 任意導入が安全な公式手順になっていません" >&2
+# 今回の配布対象外ツールが混入していないことを確認する
+if rg -n -i '(codex|hermes|obsidian)' mac/mac-setup.sh windows/setup.ps1 windows/wsl-setup.sh README.md; then
+    echo "配布対象外の Codex / Hermes / Obsidian への参照が残っています" >&2
     exit 1
 fi
-for script in mac/mac-setup.sh windows/setup.ps1 windows/wsl-setup.sh; do
-    if ! rg -q 'Hermes Agent をインストールしますか[?？] \(y/N\)' "$script" \
-        || ! rg -q 'hermes : 未導入（任意）' "$script"; then
-        echo "$script の Hermes Agent が既定スキップの任意選択になっていません" >&2
-        exit 1
-    fi
-done
-
-if rg -n '(mcp-remote|obsidian-mcp-server|@modelcontextprotocol/server)' \
-    mac/setup-obsidian-mcp.sh windows/setup-obsidian-mcp.ps1; then
-    echo "Obsidian プラグイン内蔵 MCP 以外のプロキシ導入を検出しました" >&2
-    exit 1
-fi
-
-for script in mac/mac-setup.sh windows/setup.ps1; do
-    if ! rg -q 'Obsidian MCP をインストールしますか[?？] \(y/N\)' "$script" \
-        || ! rg -q 'Obsidian MCP : 未導入（任意）' "$script"; then
-        echo "$script の Obsidian MCP が既定スキップの任意選択になっていません" >&2
-        exit 1
-    fi
-done
-if ! rg -q 'brew_install --cask obsidian' mac/mac-setup.sh \
-    || ! rg -q 'winget install --id Obsidian\.Obsidian' windows/setup.ps1; then
-    echo "Obsidian の公式パッケージ導入設定が見つかりません" >&2
-    exit 1
-fi
-
-mac_helper_hash="$(
-    sed -n 's/^[[:space:]]*OBSIDIAN_HELPER_SHA256="\([0-9a-f]*\)".*/\1/p' \
-        mac/mac-setup.sh
-)"
-actual_mac_helper_hash="$(shasum -a 256 mac/setup-obsidian-mcp.sh | awk '{print $1}')"
-if [ -z "$mac_helper_hash" ] || [ "$mac_helper_hash" != "$actual_mac_helper_hash" ]; then
-    echo "mac/mac-setup.sh の Obsidian MCP ヘルパー SHA-256 が一致しません" >&2
-    exit 1
-fi
-
-windows_helper_hash="$(
-    sed -n 's/^\$ObsidianHelperSha256 = "\([0-9a-f]*\)"\r*$/\1/p' \
-        windows/setup.ps1
-)"
-actual_windows_helper_hash="$(
-    shasum -a 256 windows/setup-obsidian-mcp.ps1 | awk '{print $1}'
-)"
-if [ -z "$windows_helper_hash" ] \
-    || [ "$windows_helper_hash" != "$actual_windows_helper_hash" ]; then
-    echo "windows/setup.ps1 の Obsidian MCP ヘルパー SHA-256 が一致しません" >&2
-    exit 1
-fi
-
-for helper in mac/setup-obsidian-mcp.sh windows/setup-obsidian-mcp.ps1; do
-    if ! rg -q 'http://127\.0\.0\.1.*?/mcp/' "$helper" \
-        || ! rg -q 'SETUP_AI_OBSIDIAN_API_KEY' "$helper" \
-        || ! rg -q 'MCP_OBSIDIAN_API_KEY' "$helper" \
-        || ! rg -q 'bearer-token-env-var.*SETUP_AI_OBSIDIAN_API_KEY' "$helper"; then
-        echo "$helper のループバック制限または秘密情報参照が不正です" >&2
-        exit 1
-    fi
-done
-if ! rg -q '\^\[A-Za-z0-9.*\{32,256\}' mac/setup-obsidian-mcp.sh \
-    || ! rg -q '\^\[A-Za-z0-9.*\{32,256\}' windows/setup-obsidian-mcp.ps1 \
-    || ! rg -q 'curl -q --config -' mac/setup-obsidian-mcp.sh; then
-    echo "Obsidian API Key の検証または安全な送信処理が見つかりません" >&2
-    exit 1
-fi
-if ! rg -q -- "--noproxy '\\*'.*--proto '=http'.*--max-redirs 0" \
-        mac/setup-obsidian-mcp.sh \
-    || ! rg -q '\$handler\.UseProxy = \$false' windows/setup-obsidian-mcp.ps1 \
-    || ! rg -q '\$handler\.AllowAutoRedirect = \$false' \
-        windows/setup-obsidian-mcp.ps1; then
-    echo "Obsidian API Key のプロキシ・リダイレクト防止設定が見つかりません" >&2
+if [ -e mac/setup-obsidian-mcp.sh ] \
+    || [ -e windows/setup-obsidian-mcp.ps1 ] \
+    || [ -e tests/windows-obsidian-helper-harness.ps1 ]; then
+    echo "Obsidian MCP ヘルパーが残っています" >&2
     exit 1
 fi
 
 ps1_prefix="$(od -An -tx1 -N3 windows/setup.ps1 | tr -d ' \n')"
 if [ "$ps1_prefix" != "efbbbf" ]; then
     echo "windows/setup.ps1 の UTF-8 BOM がありません" >&2
-    exit 1
-fi
-obsidian_ps1_prefix="$(
-    od -An -tx1 -N3 windows/setup-obsidian-mcp.ps1 | tr -d ' \n'
-)"
-if [ "$obsidian_ps1_prefix" != "efbbbf" ]; then
-    echo "windows/setup-obsidian-mcp.ps1 の UTF-8 BOM がありません" >&2
-    exit 1
-fi
-if ! perl -0777 -e '$d = <>; exit(($d !~ /(?<!\r)\n/) ? 0 : 1)' \
-    windows/setup-obsidian-mcp.ps1; then
-    echo "windows/setup-obsidian-mcp.ps1 に CRLF 以外の改行が含まれています" >&2
     exit 1
 fi
 if ! perl -0777 -e '$d = <>; exit(($d !~ /(?<!\r)\n/) ? 0 : 1)' windows/setup.ps1; then
@@ -163,6 +97,8 @@ expected_hash="$(
 actual_hash="$(shasum -a 256 windows/setup.ps1 | awk '{print $1}')"
 if [ -z "$expected_hash" ] || [ "$expected_hash" != "$actual_hash" ]; then
     echo "install.bat の EXPECTED_SHA256 が setup.ps1 と一致しません" >&2
+    echo "  expected: $expected_hash" >&2
+    echo "  actual:   $actual_hash" >&2
     exit 1
 fi
 
@@ -170,11 +106,15 @@ wsl_step_line="$(rg -n -m 1 '^Write-Step "WSL2 の状態を確認"\r?$' windows/
 git_step_line="$(rg -n -m 1 '^Write-Step "Git for Windows"\r?$' windows/setup.ps1 | cut -d: -f1)"
 result_step_line="$(rg -n -m 1 '^Write-Step "インストール結果"\r?$' windows/setup.ps1 | cut -d: -f1)"
 restart_prompt_line="$(rg -n -m 1 'Read-Host "今すぐ再起動しますか\? \(y/N\)"' windows/setup.ps1 | cut -d: -f1)"
-obsidian_step_line="$(rg -n -m 1 '^Write-Step "Obsidian MCP（任意）"\r?$' windows/setup.ps1 | cut -d: -f1)"
-codex_step_line="$(rg -n -m 1 '^Write-Step "Codex CLI"\r?$' windows/setup.ps1 | cut -d: -f1)"
+claude_desktop_line="$(rg -n -m 1 '^Write-Step "Claude Desktop"\r?$' windows/setup.ps1 | cut -d: -f1)"
+if [ -z "$wsl_step_line" ] || [ -z "$git_step_line" ] \
+    || [ -z "$result_step_line" ] || [ -z "$restart_prompt_line" ] \
+    || [ -z "$claude_desktop_line" ]; then
+    echo "Windows の必須ステップが見つかりません" >&2
+    exit 1
+fi
 if [ "$wsl_step_line" -ge "$git_step_line" ] \
-    || [ "$codex_step_line" -ge "$obsidian_step_line" ] \
-    || [ "$obsidian_step_line" -ge "$result_step_line" ] \
+    || [ "$claude_desktop_line" -ge "$result_step_line" ] \
     || [ "$restart_prompt_line" -le "$result_step_line" ]; then
     echo "Windows の導入順が不正です（WSL後も続行し、検証後に再起動を案内する必要があります）" >&2
     exit 1

@@ -9,10 +9,7 @@
 #   5. Supabase CLI           (公式 GitHub Release / SHA-256検証)
 #   6. Vercel CLI             (公式ネイティブ npm パッケージ)
 #   7. Claude Code (ネイティブ版)
-#   8. Codex CLI  (ネイティブ版)
-#   9. Hermes Agent (任意 / Nous Research 公式インストーラ)
-#  10. Claude Desktop (GUIアプリ)
-#  11. Obsidian + MCP設定ヘルパー (任意)
+#   8. Claude Desktop (GUIアプリ)
 #
 # 対応 OS: Windows 10 1809 (ビルド 17763) 以上。実行前にバージョンを確認します。
 # WSL2 はビルド 19041 以上でのみインストールします。
@@ -28,9 +25,7 @@
 $ErrorActionPreference = "Continue"
 $script:Failed = @()
 $script:RestartRequired = $false
-$script:ObsidianSelected = $false
 $VercelNativeVersion = "58.4.0"
-$ObsidianHelperSha256 = "c5f83db0b08d942051d9d24270bb829f900b5fefaafca15c32e056579dcf0b93"
 if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
     Write-Host "このスクリプトは Windows 専用です。" -ForegroundColor Red
     exit 1
@@ -185,7 +180,7 @@ if (-not $wsl2Supported) {
 # ============================================================
 # 1. PATH の確認・追加（%USERPROFILE%\.local\bin）
 #
-# インストールより前に登録する。Claude Code / Codex CLI はここへ入るが、
+# インストールより前に登録する。Claude Code はここへ入るが、
 # 途中で中断された場合に PATH だけ設定されないと、実体があるのに
 # コマンドが見つからない状態になる。ディレクトリが未作成でも登録は可能。
 # ============================================================
@@ -284,11 +279,11 @@ if (-not $wsl2Supported) {
 # ============================================================
 Write-Step "Git for Windows"
 
-# winget の有無を先に判定する。無い場合でも Claude Code / Codex CLI は
+# winget の有無を先に判定する。無い場合でも Claude Code は
 # インストーラを直接ダウンロードするため導入できる。ここで中断してはいけない。
 $hasWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
 if (-not $hasWinget) {
-    Write-Fail "winget が見つかりません。Git / Node.js / GitHub CLI / Claude Desktop / Obsidian はスキップします。"
+    Write-Fail "winget が見つかりません。Git / Node.js / GitHub CLI / Claude Desktop はスキップします。"
     Write-Host "  Microsoft Store で「アプリ インストーラー」を入れると次回から導入できます。" -ForegroundColor Yellow
 }
 
@@ -510,44 +505,7 @@ if (Get-Command claude -ErrorAction SilentlyContinue) {
 }
 
 # ============================================================
-# 9. Codex CLI（ネイティブ版・Node不要）
-# ============================================================
-Write-Step "Codex CLI"
-
-if (Get-Command codex -ErrorAction SilentlyContinue) {
-    Write-Skip "Codex CLI はインストール済み"
-} else {
-    if ($hasWinget) {
-        winget install --id OpenAI.Codex -e --source winget `
-            --accept-package-agreements --accept-source-agreements
-        Update-SessionPath
-    }
-    if (Get-Command codex -ErrorAction SilentlyContinue) {
-        Write-Ok "Codex CLI をインストールしました"
-    } else {
-        Invoke-Installer "Codex CLI" "https://chatgpt.com/codex/install.ps1" "codex"
-    }
-}
-
-# ============================================================
-# 10. Hermes Agent（任意）
-# ============================================================
-Write-Step "Hermes Agent（任意）"
-
-if (Get-Command hermes -ErrorAction SilentlyContinue) {
-    Write-Skip "Hermes Agent はインストール済み ($(hermes --version 2>$null | Select-Object -First 1))"
-} else {
-    $hermesAnswer = Read-Host "Hermes Agent をインストールしますか? (y/N)"
-    if ($hermesAnswer -match "^(y|yes)$") {
-        Invoke-Installer "Hermes Agent" "https://hermes-agent.nousresearch.com/install.ps1" `
-            "hermes" @("-SkipSetup", "-NonInteractive")
-    } else {
-        Write-Skip "Hermes Agent は選択されなかったためスキップしました"
-    }
-}
-
-# ============================================================
-# 11. Claude Desktop（GUIアプリ）
+# 9. Claude Desktop（GUIアプリ）
 # ============================================================
 Write-Step "Claude Desktop"
 
@@ -569,93 +527,11 @@ if (-not $hasWinget) {
 }
 
 # ============================================================
-# 12. Obsidian + MCP設定ヘルパー（任意）
-# ============================================================
-Write-Step "Obsidian MCP（任意）"
-
-$obsidianAnswer = Read-Host "Obsidian MCP をインストールしますか? (y/N)"
-if ($obsidianAnswer -match "^(y|yes)$") {
-    $script:ObsidianSelected = $true
-    $obsidianInstalled = Test-Path (Join-Path $env:LOCALAPPDATA "Programs\Obsidian\Obsidian.exe")
-    if (-not $obsidianInstalled -and $hasWinget) {
-        $obsidianInstalled = [bool](
-            winget list --id Obsidian.Obsidian -e 2>$null |
-                Select-String "Obsidian.Obsidian"
-        )
-    }
-
-    if ($obsidianInstalled) {
-        Write-Skip "Obsidian はインストール済み"
-    } elseif (-not $hasWinget) {
-        Write-Skip "Obsidian は winget が無いためスキップしました"
-        Add-Failure "Obsidian (winget なし)"
-    } else {
-        Write-Host "  Obsidian をダウンロードしています（数分かかります）..." -ForegroundColor DarkGray
-        winget install --id Obsidian.Obsidian -e --source winget `
-            --accept-package-agreements --accept-source-agreements --silent
-        if ($LASTEXITCODE -eq 0) {
-            Write-Ok "Obsidian をインストールしました（スタートメニューから起動できます）"
-        } else {
-            Write-Fail "Obsidian のインストールに失敗しました (exit=$LASTEXITCODE)"
-            Add-Failure "Obsidian"
-        }
-    }
-
-    $obsidianHelperTemp = Join-Path ([IO.Path]::GetTempPath()) `
-        "setup-ai-obsidian-$([Guid]::NewGuid().ToString('N')).ps1"
-    try {
-        $obsidianHelperUrl = "https://raw.githubusercontent.com/kouki485/setup_ai/main/windows/setup-obsidian-mcp.ps1"
-        Save-RemoteFile $obsidianHelperUrl $obsidianHelperTemp
-
-        $actualHelperHash = (Get-FileHash -LiteralPath $obsidianHelperTemp -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($actualHelperHash -ne $ObsidianHelperSha256) {
-            throw "SHA-256 が一致しません"
-        }
-
-        $helperBytes = [IO.File]::ReadAllBytes($obsidianHelperTemp)
-        if ($helperBytes.Length -lt 3 -or
-            $helperBytes[0] -ne 239 -or
-            $helperBytes[1] -ne 187 -or
-            $helperBytes[2] -ne 191) {
-            throw "UTF-8 BOM がありません"
-        }
-
-        $helperTokens = $null
-        $helperParseErrors = $null
-        [System.Management.Automation.Language.Parser]::ParseFile(
-            $obsidianHelperTemp, [ref]$helperTokens, [ref]$helperParseErrors
-        ) | Out-Null
-        if ($helperParseErrors.Count -gt 0) {
-            throw "PowerShell 構文検証に失敗しました"
-        }
-
-        New-Item -ItemType Directory -Path $localBin -Force | Out-Null
-        $obsidianHelperDest = Join-Path $localBin "setup-obsidian-mcp.ps1"
-        Move-Item -LiteralPath $obsidianHelperTemp -Destination $obsidianHelperDest -Force
-
-        $obsidianWrapper = Join-Path $localBin "setup-obsidian-mcp.cmd"
-        $wrapperContent = '@echo off' + "`r`n" +
-            '"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup-obsidian-mcp.ps1" %*' + "`r`n"
-        [IO.File]::WriteAllText(
-            $obsidianWrapper, $wrapperContent, [Text.Encoding]::ASCII
-        )
-        Write-Ok "MCP 設定コマンドをインストールしました ($obsidianWrapper)"
-    } catch {
-        Write-Fail "MCP 設定コマンドの配布元・SHA-256・構文検証に失敗しました: $($_.Exception.Message)"
-        Add-Failure "Obsidian MCP Helper"
-    } finally {
-        Remove-Item -LiteralPath $obsidianHelperTemp -Force -ErrorAction SilentlyContinue
-    }
-} else {
-    Write-Skip "Obsidian MCP は選択されなかったためスキップしました"
-}
-
-# ============================================================
-# 13. インストール確認
+# 10. インストール確認
 # ============================================================
 Write-Step "インストール結果"
 
-foreach ($cmd in @("git", "node", "npm", "gh", "vercel", "supabase", "claude", "codex")) {
+foreach ($cmd in @("git", "node", "npm", "gh", "vercel", "supabase", "claude")) {
     $found = Get-Command $cmd -ErrorAction SilentlyContinue
     if ($found) {
         try { $v = (& $cmd --version 2>$null | Select-Object -First 1) } catch { $v = "(version取得失敗)" }
@@ -665,38 +541,6 @@ foreach ($cmd in @("git", "node", "npm", "gh", "vercel", "supabase", "claude", "
         Add-Failure $cmd
         if ($cmd -eq "git" -and -not $hasWinget) { Write-Host "        → winget が無いため未導入です" -ForegroundColor DarkGray }
     }
-}
-
-$hermesCommand = Get-Command hermes -ErrorAction SilentlyContinue
-if ($hermesCommand) {
-    try { $hermesVersion = (& hermes --version 2>$null | Select-Object -First 1) } catch { $hermesVersion = "(version取得失敗)" }
-    Write-Ok "hermes : $hermesVersion"
-} else {
-    Write-Skip "hermes : 未導入（任意）"
-}
-
-if ($script:ObsidianSelected) {
-    $obsidianAppFound = Test-Path (Join-Path $env:LOCALAPPDATA "Programs\Obsidian\Obsidian.exe")
-    if (-not $obsidianAppFound -and $hasWinget) {
-        $obsidianAppFound = [bool](
-            winget list --id Obsidian.Obsidian -e 2>$null |
-                Select-String "Obsidian.Obsidian"
-        )
-    }
-    if ($obsidianAppFound) {
-        Write-Ok "Obsidian : インストール済み"
-    } else {
-        Write-Fail "Obsidian が見つかりません"
-        Add-Failure "Obsidian"
-    }
-    if (Test-Path (Join-Path $localBin "setup-obsidian-mcp.cmd")) {
-        Write-Ok "Obsidian MCP 設定 : setup-obsidian-mcp"
-    } else {
-        Write-Fail "setup-obsidian-mcp が見つかりません"
-        Add-Failure "Obsidian MCP Helper"
-    }
-} else {
-    Write-Skip "Obsidian MCP : 未導入（任意）"
 }
 
 if ($script:Failed.Count -gt 0) {
@@ -715,13 +559,7 @@ Write-Host "   1. 新しいターミナルを開く（PATH反映のため）" -F
 Write-Host "      ※ 今の画面でそのまま試すなら、次の1行を貼り付けてください:" -ForegroundColor DarkGray
 Write-Host '        $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")' -ForegroundColor DarkGray
 Write-Host "   2. claude を実行 → ブラウザでログイン（Pro/Max等が必要）" -ForegroundColor Green
-Write-Host "   3. codex  を実行 → ブラウザでログイン（ChatGPT Plus等が必要）" -ForegroundColor Green
-Write-Host "   4. Hermes を選んだ場合: hermes setup で初期設定" -ForegroundColor Green
-Write-Host "      ※ Nous Portal を使う場合: hermes setup --portal" -ForegroundColor Green
-Write-Host "   5. スタートメニューから Claude を起動 → アカウントでサインイン" -ForegroundColor Green
-Write-Host "   6. Obsidian MCP を選んだ場合:" -ForegroundColor Green
-Write-Host "      Obsidian で Local REST API with MCP と HTTP server を有効にして" -ForegroundColor Green
-Write-Host "      setup-obsidian-mcp を実行" -ForegroundColor Green
+Write-Host "   3. スタートメニューから Claude を起動 → アカウントでサインイン" -ForegroundColor Green
 Write-Host "" -ForegroundColor Green
 Write-Host " WSL側にもCLIを入れる場合は、Ubuntuターミナルで" -ForegroundColor Green
 Write-Host "   bash wsl-setup.sh を実行してください（windows フォルダ内にあります）。" -ForegroundColor Green

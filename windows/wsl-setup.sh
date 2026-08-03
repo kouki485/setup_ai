@@ -9,8 +9,6 @@
 #   4. Supabase CLI  (GitHub Releases の .deb)
 #   5. Vercel CLI    (公式ネイティブ npm パッケージ)
 #   6. Claude Code   (署名付き公式 apt リポジトリ)
-#   7. Codex CLI     (公式 npm パッケージ)
-#   8. Hermes Agent  (任意 / Nous Research 公式インストーラ)
 #
 # 対応 OS: Ubuntu 20.04 以上 / Debian 10 以上。実行前に確認します。
 #
@@ -28,7 +26,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 # 全体の何番目を実行中かを常に見せる。長い処理が続くと利用者は
 # 「止まったのでは」と不安になり、強制終了してしまうため。
-TOTAL_STEPS=11
+TOTAL_STEPS=9
 STEP_NO=0
 
 step() {
@@ -152,9 +150,9 @@ fi
 # ------------------------------------------------------------
 # 2. PATH 確認（~/.local/bin）
 #
-# CLI の導入より前に設定する。Claude Code / Codex CLI / Vercel CLI は
-# ここへ入るが、途中で中断された場合に PATH だけ未設定だと、実体が
-# あるのにコマンドが見つからない状態になる。
+# CLI の導入より前に設定する。Claude Code / Vercel CLI はここへ入るが、
+# 途中で中断された場合に PATH だけ未設定だと、実体があるのにコマンドが
+# 見つからない状態になる。
 # ------------------------------------------------------------
 step "PATH 設定を確認"
 # shellcheck disable=SC2016  # 設定ファイルへリテラルとして書き込む
@@ -344,65 +342,10 @@ else
 fi
 
 # ------------------------------------------------------------
-# 8. Codex CLI
-# ------------------------------------------------------------
-step "Codex CLI"
-if command -v codex >/dev/null 2>&1; then
-    skip "インストール済み ($(codex --version 2>/dev/null | head -n1))"
-elif ! command -v npm >/dev/null 2>&1; then
-    fail "npm が見つからないため Codex CLI をスキップしました"
-    FAILED=1
-else
-    printf '  \033[90m公式 npm パッケージから Codex CLI を取得しています...\033[0m\n'
-    if npm install --prefix "$HOME/.local" -g --ignore-scripts @openai/codex; then
-        ok "Codex CLI をインストールしました ($(codex --version 2>/dev/null | head -n1))"
-    else
-        fail "Codex CLI のインストールに失敗しました"
-        FAILED=1
-    fi
-fi
-
-# ------------------------------------------------------------
-# 9. Hermes Agent（任意）
-# ------------------------------------------------------------
-step "Hermes Agent（任意）"
-
-if command -v hermes >/dev/null 2>&1; then
-    skip "インストール済み ($(hermes --version 2>/dev/null | head -n1))"
-else
-    printf '  Hermes Agent をインストールしますか？ (y/N): '
-    HERMES_ANSWER=""
-    IFS= read -r HERMES_ANSWER || HERMES_ANSWER=""
-    case "$HERMES_ANSWER" in
-        y|Y|yes|YES|Yes)
-            printf '  \033[90mNous Research の公式インストーラを取得しています...\033[0m\n'
-            HERMES_INSTALLER="$TMP_DIR/hermes-install.sh"
-            if download "https://hermes-agent.nousresearch.com/install.sh" "$HERMES_INSTALLER" \
-                && bash -n "$HERMES_INSTALLER" \
-                && bash "$HERMES_INSTALLER" --skip-setup --non-interactive; then
-                hash -r
-                if command -v hermes >/dev/null 2>&1; then
-                    ok "Hermes Agent をインストールしました ($(hermes --version 2>/dev/null | head -n1))"
-                else
-                    fail "インストール後も hermes コマンドが見つかりません"
-                    FAILED=1
-                fi
-            else
-                fail "Hermes Agent の検証またはインストールに失敗しました"
-                FAILED=1
-            fi
-            ;;
-        *)
-            skip "Hermes Agent は選択されなかったためスキップしました"
-            ;;
-    esac
-fi
-
-# ------------------------------------------------------------
-# 10. 結果確認
+# 8. 結果確認
 # ------------------------------------------------------------
 step "インストール結果"
-for cmd in git node npm gh vercel supabase claude codex; do
+for cmd in git node npm gh vercel supabase claude; do
     if command -v "$cmd" >/dev/null 2>&1; then
         ok "$cmd : $("$cmd" --version 2>/dev/null | head -n1)"
     else
@@ -411,21 +354,12 @@ for cmd in git node npm gh vercel supabase claude codex; do
     fi
 done
 
-if command -v hermes >/dev/null 2>&1; then
-    ok "hermes : $(hermes --version 2>/dev/null | head -n1)"
-else
-    skip "hermes : 未導入（任意）"
-fi
-
 cat <<'EOF'
 
 ============================================================
  WSL側セットアップ完了！次のステップ:
    1. source ~/.bashrc （または新しいターミナルを開く）
    2. claude を実行 → Windows側ブラウザが開くのでログイン
-   3. codex  を実行 → 同様にログイン
-   4. Hermes を選んだ場合: hermes setup で初期設定
-      ※ Nous Portal を使う場合: hermes setup --portal
 
  ヒント: プロジェクトは /mnt/c/ ではなく ~/ 以下に置くと
          ファイルI/Oが速く快適です。

@@ -11,10 +11,7 @@
 #   6. Supabase CLI              (Homebrew 公式 tap 経由)
 #   7. Vercel CLI                (公式ネイティブ npm パッケージ)
 #   8. Claude Code               (Homebrew Cask)
-#   9. Codex CLI                 (Homebrew Cask)
-#  10. Hermes Agent              (任意 / Nous Research 公式インストーラ)
-#  11. Claude Desktop            (GUIアプリ / Homebrew Cask)
-#  12. Obsidian + MCP設定ヘルパー (任意 / Homebrew Cask)
+#   9. Claude Desktop            (GUIアプリ / Homebrew Cask)
 #
 # 対応 OS: macOS 13 (Ventura) 以上。実行前にバージョンを確認します。
 #
@@ -32,7 +29,7 @@ umask 077
 
 # 全体の何番目を実行中かを常に見せる。長い処理が続くと利用者は
 # 「止まったのでは」と不安になり、強制終了してしまうため。
-TOTAL_STEPS=15
+TOTAL_STEPS=12
 STEP_NO=0
 
 step() {
@@ -54,7 +51,6 @@ warn() { printf '  \033[33m[注意]\033[0m %s\n' "$1"; }
 fail() { printf '  \033[31m[NG]\033[0m %s\n' "$1"; }
 
 FAILED=""
-OBSIDIAN_SELECTED=0
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/setup-ai.XXXXXX")" || {
     fail "一時ディレクトリを作成できませんでした"
     exit 1
@@ -373,59 +369,7 @@ else
 fi
 
 # ------------------------------------------------------------
-# 10. Codex CLI
-# ------------------------------------------------------------
-step "Codex CLI"
-
-if command -v codex >/dev/null 2>&1; then
-    skip "インストール済み ($(codex --version 2>/dev/null | head -n1))"
-else
-    if brew_install --cask codex; then
-        ok "Codex CLI をインストールしました ($(codex --version 2>/dev/null | head -n1))"
-    else
-        fail "Codex CLI のインストールに失敗しました"
-        FAILED="$FAILED Codex-CLI"
-    fi
-fi
-
-# ------------------------------------------------------------
-# 11. Hermes Agent（任意）
-# ------------------------------------------------------------
-step "Hermes Agent（任意）"
-
-if command -v hermes >/dev/null 2>&1; then
-    skip "インストール済み ($(hermes --version 2>/dev/null | head -n1))"
-else
-    printf '  Hermes Agent をインストールしますか？ (y/N): '
-    HERMES_ANSWER=""
-    IFS= read -r HERMES_ANSWER || HERMES_ANSWER=""
-    case "$HERMES_ANSWER" in
-        y|Y|yes|YES|Yes)
-            printf '  \033[90mNous Research の公式インストーラを取得しています...\033[0m\n'
-            HERMES_INSTALLER="$TMP_DIR/hermes-install.sh"
-            if download "https://hermes-agent.nousresearch.com/install.sh" "$HERMES_INSTALLER" \
-                && /bin/bash -n "$HERMES_INSTALLER" \
-                && /bin/bash "$HERMES_INSTALLER" --skip-setup --non-interactive; then
-                hash -r
-                if command -v hermes >/dev/null 2>&1; then
-                    ok "Hermes Agent をインストールしました ($(hermes --version 2>/dev/null | head -n1))"
-                else
-                    fail "インストール後も hermes コマンドが見つかりません"
-                    FAILED="$FAILED Hermes-Agent"
-                fi
-            else
-                fail "Hermes Agent の検証またはインストールに失敗しました"
-                FAILED="$FAILED Hermes-Agent"
-            fi
-            ;;
-        *)
-            skip "Hermes Agent は選択されなかったためスキップしました"
-            ;;
-    esac
-fi
-
-# ------------------------------------------------------------
-# 12. Claude Desktop (GUIアプリ)
+# 10. Claude Desktop (GUIアプリ)
 # ------------------------------------------------------------
 step "Claude Desktop"
 
@@ -444,57 +388,11 @@ else
 fi
 
 # ------------------------------------------------------------
-# 13. Obsidian + MCP設定ヘルパー（任意）
-# ------------------------------------------------------------
-step "Obsidian MCP（任意）"
-
-printf '  Obsidian MCP をインストールしますか？ (y/N): '
-OBSIDIAN_ANSWER=""
-IFS= read -r OBSIDIAN_ANSWER || OBSIDIAN_ANSWER=""
-case "$OBSIDIAN_ANSWER" in
-    y|Y|yes|YES|Yes)
-        OBSIDIAN_SELECTED=1
-        if [ -d "/Applications/Obsidian.app" ]; then
-            skip "Obsidian はインストール済み (/Applications/Obsidian.app)"
-        elif brew list --cask obsidian >/dev/null 2>&1; then
-            skip "Obsidian はインストール済み (Homebrew Cask)"
-        else
-            printf '  \033[90mObsidian をダウンロードしています（数分かかります）...\033[0m\n'
-            if brew_install --cask obsidian; then
-                ok "Obsidian をインストールしました（Launchpad から起動できます）"
-            else
-                fail "Obsidian のインストールに失敗しました"
-                FAILED="$FAILED Obsidian"
-            fi
-        fi
-
-        OBSIDIAN_HELPER_URL="https://raw.githubusercontent.com/kouki485/setup_ai/main/mac/setup-obsidian-mcp.sh"
-        OBSIDIAN_HELPER_SHA256="1e2e86de3d1619a69cbc31ac7d43b098db366b391a5014adb836f20d46a2e7e2"
-        OBSIDIAN_HELPER_TEMP="$TMP_DIR/setup-obsidian-mcp.sh"
-        OBSIDIAN_HELPER_DEST="$LOCAL_BIN/setup-obsidian-mcp"
-        mkdir -p "$LOCAL_BIN"
-        if download "$OBSIDIAN_HELPER_URL" "$OBSIDIAN_HELPER_TEMP" \
-            && printf '%s  %s\n' "$OBSIDIAN_HELPER_SHA256" "$OBSIDIAN_HELPER_TEMP" \
-                | shasum -a 256 -c - >/dev/null \
-            && /bin/bash -n "$OBSIDIAN_HELPER_TEMP" \
-            && install -m 700 "$OBSIDIAN_HELPER_TEMP" "$OBSIDIAN_HELPER_DEST"; then
-            ok "MCP 設定コマンドをインストールしました ($OBSIDIAN_HELPER_DEST)"
-        else
-            fail "MCP 設定コマンドの配布元・SHA-256・構文検証に失敗しました"
-            FAILED="$FAILED Obsidian-MCP-Helper"
-        fi
-        ;;
-    *)
-        skip "Obsidian MCP は選択されなかったためスキップしました"
-        ;;
-esac
-
-# ------------------------------------------------------------
-# 14. インストール結果
+# 11. インストール結果
 # ------------------------------------------------------------
 step "インストール結果"
 
-for cmd in brew git node npm gh vercel supabase claude codex; do
+for cmd in brew git node npm gh vercel supabase claude; do
     if command -v "$cmd" >/dev/null 2>&1; then
         ok "$cmd : $("$cmd" --version 2>/dev/null | head -n1)"
     else
@@ -503,34 +401,11 @@ for cmd in brew git node npm gh vercel supabase claude codex; do
     fi
 done
 
-if command -v hermes >/dev/null 2>&1; then
-    ok "hermes : $(hermes --version 2>/dev/null | head -n1)"
-else
-    skip "hermes : 未導入（任意）"
-fi
-
 if [ -d "/Applications/Claude.app" ]; then
     ok "Claude Desktop : /Applications/Claude.app"
 else
     fail "Claude Desktop が見つかりません"
     FAILED="$FAILED Claude-Desktop"
-fi
-
-if [ "$OBSIDIAN_SELECTED" -eq 1 ]; then
-    if [ -d "/Applications/Obsidian.app" ]; then
-        ok "Obsidian : /Applications/Obsidian.app"
-    else
-        fail "Obsidian が見つかりません"
-        FAILED="$FAILED Obsidian"
-    fi
-    if [ -x "$LOCAL_BIN/setup-obsidian-mcp" ]; then
-        ok "Obsidian MCP 設定 : setup-obsidian-mcp"
-    else
-        fail "setup-obsidian-mcp が見つかりません"
-        FAILED="$FAILED Obsidian-MCP-Helper"
-    fi
-else
-    skip "Obsidian MCP : 未導入（任意）"
 fi
 
 if [ -n "$FAILED" ]; then
@@ -545,13 +420,7 @@ cat <<EOF
    1. 新しいターミナルを開く（PATH反映のため）
       ※ 今の画面でそのまま試すなら: source $PROFILE
    2. claude を実行 → ブラウザでログイン（Pro/Max等が必要）
-   3. codex  を実行 → ブラウザでログイン（ChatGPT Plus等が必要）
-   4. Hermes を選んだ場合: hermes setup で初期設定
-      ※ Nous Portal を使う場合: hermes setup --portal
-   5. Launchpad から Claude を起動 → アカウントでサインイン
-   6. Obsidian MCP を選んだ場合:
-      Obsidian で Local REST API with MCP を有効化し、
-      HTTP server を有効にしてから setup-obsidian-mcp を実行
+   3. Launchpad から Claude を起動 → アカウントでサインイン
 
  業務での使い方は prompts/ のプロンプトを参照してください。
    business-discovery.md … 自分の業務を Claude に理解させる
