@@ -25,6 +25,10 @@ if rg -q 'com\.apple\.quarantine' Start_Mac.command; then
     echo "Start_Mac.command が Gatekeeper の隔離属性を削除しています" >&2
     exit 1
 fi
+if [ ! -f Start.html ]; then
+    echo "Start.html がありません" >&2
+    exit 1
+fi
 if [ ! -f README_JA.txt ]; then
     echo "README_JA.txt がありません" >&2
     exit 1

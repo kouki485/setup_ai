@@ -32,16 +32,16 @@
 
 ```powershell
 mkdir "$env:USERPROFILE\.claude\commands" -Force
-curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\business-discovery.md" https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/business-discovery.md
-curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\ax-proposal.md" https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/ax-proposal.md
+curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\business-discovery.md" https://raw.githubusercontent.com/kouki485/setup_claude/main/prompts/business-discovery.md
+curl.exe -fsSL -o "$env:USERPROFILE\.claude\commands\ax-proposal.md" https://raw.githubusercontent.com/kouki485/setup_claude/main/prompts/ax-proposal.md
 ```
 
 **Mac**（ターミナル）
 
 ```bash
 mkdir -p ~/.claude/commands
-curl -fsSL -o ~/.claude/commands/business-discovery.md https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/business-discovery.md
-curl -fsSL -o ~/.claude/commands/ax-proposal.md https://raw.githubusercontent.com/kouki485/setup_ai/main/prompts/ax-proposal.md
+curl -fsSL -o ~/.claude/commands/business-discovery.md https://raw.githubusercontent.com/kouki485/setup_claude/main/prompts/business-discovery.md
+curl -fsSL -o ~/.claude/commands/ax-proposal.md https://raw.githubusercontent.com/kouki485/setup_claude/main/prompts/ax-proposal.md
 ```
 
 ---
@@ -62,7 +62,7 @@ $base = Join-Path $desktop "業務改善"; $dir = $base; $i = 2
 while (Test-Path $dir) { $dir = "$base$i"; $i++ }
 New-Item -ItemType Directory -Path $dir | Out-Null
 Set-Location $dir
-git clone https://github.com/kouki485/setup_ai.git
+git clone https://github.com/kouki485/setup_claude.git
 Write-Host "作業フォルダ: $dir"
 explorer.exe $dir    # 作ったフォルダをエクスプローラーで開く
 ```
@@ -75,7 +75,7 @@ explorer.exe $dir    # 作ったフォルダをエクスプローラーで開く
 base="$HOME/Desktop/業務改善"; dir="$base"; i=2
 while [ -e "$dir" ]; do dir="$base$i"; i=$((i+1)); done
 mkdir -p "$dir" && cd "$dir"
-git clone https://github.com/kouki485/setup_ai.git
+git clone https://github.com/kouki485/setup_claude.git
 echo "作業フォルダ: $dir"
 ```
 
@@ -109,7 +109,7 @@ Claude が把握した内容を要約して見せてきます。**間違いが�
 
 ```
 Desktop/業務改善/
-  ├── setup_ai/              ← ステップ1で clone したリポジトリ
+  ├── setup_claude/          ← ステップ1で clone したリポジトリ
   ├── 業務プロファイル.html    ← ダブルクリックで開く。共有・印刷用
   └── 業務プロファイル.md      ← 次の工程で Claude が読む
 ```

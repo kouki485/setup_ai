@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI開発環境セットアップ</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #59636e;
+      --line: #d0d7de;
+      --accent: #1f6feb;
+      --accent-text: #ffffff;
+      --warn-bg: #fff8c5;
+      --warn-line: #d4a72c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #eef3ff 0%, var(--bg) 40%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 8px 24px rgba(31, 35, 40, 0.06);
+    }
+    h1 { margin: 0 0 8px; font-size: 1.6rem; }
+    h2 { margin: 28px 0 12px; font-size: 1.15rem; }
+    p, li { color: var(--text); }
+    .muted { color: var(--muted); }
+    .warn {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: #0d1117;
+      color: #e6edf3;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    button, .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    button.primary, .btn.primary {
+      background: var(--accent);
+      color: var(--accent-text);
+    }
+    button.secondary, .btn.secondary {
+      background: #eaeef2;
+      color: var(--text);
+    }
+    #toast {
+      display: none;
+      margin-top: 10px;
+      color: #1a7f37;
+      font-weight: 600;
+    }
+    .os-only { display: none; }
+    .os-only.show { display: block; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <h1>AI 開発環境セットアップ</h1>
+      <p class="muted">このページはブラウザで開いています。ここからなら macOS の警告で止まりません。</p>
+
+      <div id="mac" class="os-only">
+        <div class="warn">
+          <strong>Mac で Start_Mac.command をダブルクリックすると止まるでエラーになります。</strong><br>
+          Apple のセキュリティ（Gatekeeper）の仕様です。下の方法で進めてください。
+        </div>
+
+        <h2>おすすめ: ターミナルに貼り付け</h2>
+        <ol>
+          <li>Launchpad →「その他」→「ターミナル」を開く</li>
+          <li>下の「コマンドをコピー」を押す</li>
+          <li>ターミナルに貼り付けて Enter</li>
+        </ol>
+        <pre id="mac-cmd">DIR=$(find "$HOME/Downloads" "$HOME/Desktop" "$HOME/Documents" -maxdepth 4 -type d -name 'AI-Dev-Setup' 2>/dev/null | head -n1); if [ -z "$DIR" ]; then echo "AI-Dev-Setup フォルダが見つかりません。ZIP を展開した場所を確認してください。"; else cd "$DIR" && xattr -dr com.apple.quarantine . && bash mac/mac-setup.sh; fi</pre>
+        <div class="actions">
+          <button class="primary" type="button" onclick="copyText('mac-cmd')">コマンドをコピー</button>
+          <button class="secondary" type="button" onclick="copyText('mac-cmd-drag')">フォルダを自分で選ぶコマンドをコピー</button>
+        </div>
+        <pre id="mac-cmd-drag" hidden>echo "次に表示される画面で、展開済みの AI-Dev-Setup フォルダを選んでください"; DIR=$(osascript -e 'POSIX path of (choose folder with prompt "展開した AI-Dev-Setup フォルダを選んでください")' | sed 's:/$::'); cd "$DIR" && xattr -dr com.apple.quarantine . && bash mac/mac-setup.sh</pre>
+        <p id="toast">コピーしました。ターミナルに貼り付けて Enter を押してください。</p>
+
+        <h2>別の方法</h2>
+        <ol>
+          <li><code>Start_Mac.command</code> を<strong>右クリック</strong></li>
+          <li>「開く」を選ぶ</li>
+          <li>確認画面でもう一度「開く」</li>
+        </ol>
+        <p class="muted">Homebrew 導入時だけ、Mac のログインパスワードを聞かれます。</p>
+      </div>
+
+      <div id="win" class="os-only">
+        <h2>Windows の手順</h2>
+        <ol>
+          <li><code>Start_Windows.bat</code> をダブルクリック</li>
+          <li>SmartScreen / Defender の警告が出たら「詳細情報」→「実行」</li>
+          <li>WSL2 の確認（UAC）が出たら「はい」</li>
+        </ol>
+        <div class="actions">
+          <a class="btn primary" href="Start_Windows.bat">Start_Windows.bat を開く</a>
+        </div>
+        <p class="muted">終わったら新しい PowerShell を開き、<code>claude</code> でログインしてください。</p>
+      </div>
+
+      <div id="other" class="os-only">
+        <p>OS を自動判定できませんでした。Windows なら <code>Start_Windows.bat</code>、Mac なら上のターミナル手順を使ってください。</p>
+      </div>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var ua = navigator.userAgent || "";
+      var isMac = /Mac|iPhone|iPad|iPod/.test(ua);
+      var isWin = /Windows/.test(ua);
+      var el = document.getElementById(isMac ? "mac" : isWin ? "win" : "other");
+      el.classList.add("show");
+    })();
+
+    function copyText(id) {
+      var node = document.getElementById(id);
+      var text = node.textContent.trim();
+      function done() {
+        var toast = document.getElementById("toast");
+        if (toast) {
+          toast.style.display = "block";
+          setTimeout(function () { toast.style.display = "none"; }, 4000);
+        }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () {
+          window.prompt("次のコマンドをコピーしてください:", text);
+        });
+      } else {
+        window.prompt("次のコマンドをコピーしてください:", text);
+      }
+    }
+  </script>
+</body>
+</html>

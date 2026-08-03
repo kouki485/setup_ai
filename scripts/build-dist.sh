@@ -15,6 +15,7 @@ mkdir -p "$STAGING/$NAME"
 
 cp \
   README_JA.txt \
+  Start.html \
   Start_Windows.bat \
   Start_Mac.command \
   "$STAGING/$NAME/"
@@ -55,6 +56,7 @@ names = [i.filename for i in z.infolist()]
 for n in names:
     print(n)
 required = [
+    "AI-Dev-Setup/Start.html",
     "AI-Dev-Setup/Start_Windows.bat",
     "AI-Dev-Setup/Start_Mac.command",
     "AI-Dev-Setup/README_JA.txt",
